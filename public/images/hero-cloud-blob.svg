@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="100%" height="100%" fill="none">
+  <defs>
+    {/* Gradients */}
+    <linearGradient id="mainPurpleGrad" x1="10%" y1="20%" x2="90%" y2="85%">
+      <stop offset="0%" stopColor="#7C3AED" />
+      <stop offset="35%" stopColor="#6D28D9" />
+      <stop offset="70%" stopColor="#4F46E5" />
+      <stop offset="100%" stopColor="#3730A3" />
+    </linearGradient>
+
+    <linearGradient id="lavenderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#E9D5FF" stopOpacity="0.9" />
+      <stop offset="50%" stopColor="#C4B5FD" stopOpacity="0.8" />
+      <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.6" />
+    </linearGradient>
+
+    <linearGradient id="electricIndigoGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stopColor="#818CF8" stopOpacity="0.85" />
+      <stop offset="100%" stopColor="#4338CA" stopOpacity="0.95" />
+    </linearGradient>
+
+    <radialGradient id="highlightGlow" cx="45%" cy="40%" r="50%">
+      <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.35" />
+      <stop offset="45%" stopColor="#C4B5FD" stopOpacity="0.15" />
+      <stop offset="100%" stopColor="#7C3AED" stopOpacity="0" />
+    </radialGradient>
+
+    <linearGradient id="splashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#A78BFA" />
+      <stop offset="100%" stopColor="#6D28D9" />
+    </linearGradient>
+  </defs>
+
+  {/* ========================================================
+      LAYER 1: BACKDROP SOFT LAVENDER / INDIGO OVERFLOW BLOBS
+      ======================================================== */}
+  {/* Secondary Top-Right Lavender Blob */}
+  <path
+    d="M720,120 C840,90 960,130 1030,220 C1100,310 1120,440 1060,540 C1000,640 880,690 770,680 C660,670 580,590 560,490 C540,390 600,150 720,120 Z"
+    fill="url(#lavenderGrad)"
+  />
+
+  {/* Secondary Bottom-Left Electric Indigo Blob */}
+  <path
+    d="M260,340 C380,310 490,380 540,480 C590,580 560,680 470,740 C380,800 240,790 150,720 C60,650 30,520 80,430 C130,340 140,370 260,340 Z"
+    fill="url(#electricIndigoGrad)"
+    opacity="0.8"
+  />
+
+  {/* ========================================================
+      LAYER 2: MAIN CENTRAL ORGANIC CLOUD / BLOB
+      With hand-drawn neo-brutalist smooth fluid curves
+      ======================================================== */}
+  <path
+    d="M480,140 C620,100 780,110 880,210 C980,310 1020,460 960,580 C900,700 750,770 600,760 C450,750 340,660 270,550 C200,440 210,320 290,230 C370,140 340,180 480,140 Z"
+    fill="url(#mainPurpleGrad)"
+  />
+
+  {/* Subtle Internal Highlight Glow on Main Blob */}
+  <path
+    d="M480,140 C620,100 780,110 880,210 C980,310 1020,460 960,580 C900,700 750,770 600,760 C450,750 340,660 270,550 C200,440 210,320 290,230 C370,140 340,180 480,140 Z"
+    fill="url(#highlightGlow)"
+  />
+
+  {/* Top Edge Lavender Crest Bubble */}
+  <path
+    d="M420,190 C500,160 590,170 650,220 C710,270 710,350 660,400 C610,450 510,460 440,430 C370,400 340,220 420,190 Z"
+    fill="url(#lavenderGrad)"
+    opacity="0.4"
+  />
+
+  {/* ========================================================
+      LAYER 3: ORGANIC PAINT SPLASHES, DRIPS & IRREGULAR DETAILS
+      ======================================================== */}
+  {/* Right side floating droplet 1 */}
+  <circle cx="1060" cy="280" r="24" fill="#7C3AED" />
+  <circle cx="1095" cy="245" r="12" fill="#A78BFA" />
+  <circle cx="1040" cy="330" r="8" fill="#C4B5FD" />
+
+  {/* Top left floating droplet cluster */}
+  <circle cx="280" cy="180" r="18" fill="#6D28D9" />
+  <circle cx="240" cy="160" r="10" fill="#8B5CF6" />
+  <circle cx="310" cy="140" r="7" fill="#C4B5FD" />
+
+  {/* Bottom right drip splash */}
+  <circle cx="980" cy="650" r="22" fill="#4F46E5" />
+  <circle cx="1025" cy="670" r="14" fill="#7C3AED" />
+  <circle cx="950" cy="710" r="9" fill="#A78BFA" />
+
+  {/* Bottom left splash */}
+  <circle cx="180" cy="680" r="16" fill="#7C3AED" opacity="0.8" />
+  <circle cx="140" cy="640" r="10" fill="#C4B5FD" />
+
+  {/* ========================================================
+      LAYER 4: TINY ABSTRACT DOTS, SPARKLES & GEOMETRIC ACCENTS
+      ======================================================== */}
+  {/* White Sparkle 1 (Top Center) */}
+  <path
+    d="M620,170 L624,185 L639,189 L624,193 L620,208 L616,193 L601,189 L616,185 Z"
+    fill="#FFFFFF"
+    opacity="0.9"
+  />
+
+  {/* White Sparkle 2 (Mid Right) */}
+  <path
+    d="M920,380 L923,392 L935,395 L923,398 L920,410 L917,398 L905,395 L917,392 Z"
+    fill="#FFFFFF"
+    opacity="0.85"
+  />
+
+  {/* Deep Violet Sparkle 3 (Bottom Left) */}
+  <path
+    d="M340,490 L343,500 L353,503 L343,506 L340,516 L337,506 L327,503 L337,500 Z"
+    fill="#C4B5FD"
+    opacity="0.9"
+  />
+
+  {/* Geometric Plus Cross Accents */}
+  {/* Plus 1 */}
+  <path d="M840,240 L860,240 M850,230 L850,250" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+  {/* Plus 2 */}
+  <path d="M430,320 L446,320 M438,312 L438,328" stroke="#DDD6FE" strokeWidth="2.5" strokeLinecap="round" opacity="0.75" />
+  {/* Plus 3 */}
+  <path d="M780,590 L796,590 M788,582 L788,598" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+
+  {/* Subtle Abstract Dot Clusters */}
+  <circle cx="780" cy="190" r="3.5" fill="#FFFFFF" opacity="0.8" />
+  <circle cx="800" cy="195" r="2.5" fill="#FFFFFF" opacity="0.6" />
+  <circle cx="790" cy="210" r="3" fill="#FFFFFF" opacity="0.7" />
+
+  <circle cx="510" cy="620" r="3" fill="#C4B5FD" opacity="0.7" />
+  <circle cx="530" cy="635" r="2" fill="#C4B5FD" opacity="0.5" />
+
+  <circle cx="940" cy="480" r="3.5" fill="#FFFFFF" opacity="0.75" />
+  <circle cx="955" cy="495" r="2" fill="#FFFFFF" opacity="0.6" />
+</svg>
