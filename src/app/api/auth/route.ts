@@ -41,6 +41,39 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { action, email, password, fullName } = body;
 
+    // 1. LOGOUT MUST ALWAYS BE HANDLED FIRST & NEVER HIT DEMO LOGIN
+    if (action === "logout") {
+      if (isSupabaseServerConfigured()) {
+        try {
+          const supabase = await createServerSupabaseClient();
+          await supabase.auth.signOut();
+        } catch {}
+      }
+
+      const response = NextResponse.json({ success: true, message: "Logged out successfully" });
+
+      try {
+        const cookieStore = await cookies();
+        for (const cookie of cookieStore.getAll()) {
+          if (
+            cookie.name.startsWith("sb-") ||
+            cookie.name.includes("auth") ||
+            cookie.name.includes("token") ||
+            cookie.name.includes("session")
+          ) {
+            response.cookies.set({
+              name: cookie.name,
+              value: "",
+              maxAge: 0,
+              path: "/",
+            });
+          }
+        }
+      } catch {}
+
+      return response;
+    }
+
     if (!isSupabaseServerConfigured()) {
       // Graceful local demo mode
       return NextResponse.json({
@@ -104,34 +137,6 @@ export async function POST(request: Request) {
         user: data.user,
         session: data.session,
       });
-    }
-
-    if (action === "logout") {
-      try {
-        await supabase.auth.signOut();
-      } catch {}
-
-      const response = NextResponse.json({ success: true, message: "Logged out successfully" });
-
-      try {
-        const cookieStore = await cookies();
-        for (const cookie of cookieStore.getAll()) {
-          if (
-            cookie.name.startsWith("sb-") ||
-            cookie.name.includes("auth") ||
-            cookie.name.includes("token")
-          ) {
-            response.cookies.set({
-              name: cookie.name,
-              value: "",
-              maxAge: 0,
-              path: "/",
-            });
-          }
-        }
-      } catch {}
-
-      return response;
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

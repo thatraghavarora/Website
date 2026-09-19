@@ -6,6 +6,7 @@ import {
   verifyAdminAuth,
 } from "@/lib/adminAuth";
 import { sanitizeString } from "@/lib/validations";
+import { createServerSupabaseClient, isSupabaseServerConfigured } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const auth = await verifyAdminAuth(request);
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
 export async function DELETE() {
   try {
     const cookieStore = await cookies();
+    cookieStore.delete(ADMIN_COOKIE_NAME);
     cookieStore.set({
       name: ADMIN_COOKIE_NAME,
       value: "",
@@ -68,10 +70,42 @@ export async function DELETE() {
       path: "/",
     });
 
-    return NextResponse.json({
+    if (isSupabaseServerConfigured()) {
+      try {
+        const supabase = await createServerSupabaseClient();
+        await supabase.auth.signOut();
+      } catch {}
+    }
+
+    const response = NextResponse.json({
       success: true,
       message: "Logged out from Admin successfully.",
     });
+
+    response.cookies.delete(ADMIN_COOKIE_NAME);
+    response.cookies.set({
+      name: ADMIN_COOKIE_NAME,
+      value: "",
+      maxAge: 0,
+      path: "/",
+    });
+
+    for (const cookie of cookieStore.getAll()) {
+      if (
+        cookie.name.startsWith("sb-") ||
+        cookie.name.includes("auth") ||
+        cookie.name.includes("token")
+      ) {
+        response.cookies.set({
+          name: cookie.name,
+          value: "",
+          maxAge: 0,
+          path: "/",
+        });
+      }
+    }
+
+    return response;
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });

@@ -323,11 +323,30 @@ export default function AdminPage() {
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth", { method: "DELETE" });
-      setIsAuthenticated(false);
-      setStats(null);
-    } catch {
-      setIsAuthenticated(false);
-    }
+    } catch {}
+    try {
+      await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "logout" }),
+      });
+    } catch {}
+    try {
+      if (typeof document !== "undefined") {
+        document.cookie.split(";").forEach((cookie) => {
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`;
+        });
+      }
+    } catch {}
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+    setIsAuthenticated(false);
+    setStats(null);
+    window.location.href = "/admin";
   };
 
   // Update Inquiry Status (Server-side validated)
