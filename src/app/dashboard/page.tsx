@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle2,
   Flame,
+  ChevronLeft,
   ChevronRight,
   Zap,
   Award,
@@ -160,36 +161,74 @@ const initialCommunityPosts: CommunityPost[] = [
 function DesktopSidebar({
   active,
   onSelect,
+  collapsed,
+  onToggleCollapse,
 }: {
   active: Tab;
   onSelect: (t: Tab) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   return (
-    <aside className="hidden md:flex fixed top-0 left-0 h-full w-64 bg-neutral-950 border-r-[3px] border-black z-30 flex-col">
-      {/* Logo */}
-      <div className="h-16 flex items-center px-5 border-b-[3px] border-black shrink-0">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="bg-yellow-300 text-black px-2 py-0.5 rounded-md font-mono text-sm font-black group-hover:bg-yellow-400 transition-colors">
+    <aside
+      className={`hidden md:flex fixed top-0 left-0 h-full ${
+        collapsed ? "w-20" : "w-64"
+      } bg-neutral-950 border-r-[3px] border-black z-30 flex-col transition-all duration-300 select-none`}
+    >
+      {/* Logo & Close/Collapse Toggle Button */}
+      <div
+        className={`h-16 flex items-center ${
+          collapsed ? "justify-center gap-1.5 px-2" : "justify-between px-4"
+        } border-b-[3px] border-black shrink-0`}
+      >
+        <Link
+          href="/"
+          className="flex items-center gap-2 group min-w-0 overflow-hidden"
+          title="thatraghavarora"
+        >
+          <span className="bg-yellow-300 text-black px-2 py-0.5 rounded-md font-mono text-sm font-black group-hover:bg-yellow-400 transition-colors shrink-0 shadow-brutal-xs">
             &lt;/&gt;
           </span>
-          <span className="font-black text-base text-white tracking-tight">
-            thatraghavarora
-          </span>
+          {!collapsed && (
+            <span className="font-black text-base text-white tracking-tight truncate">
+              thatraghavarora
+            </span>
+          )}
         </Link>
+
+        {/* Toggle Button near thatraghavarora */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="p-1.5 rounded-lg border-2 border-neutral-700 hover:border-yellow-300 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white transition-all cursor-pointer shadow-brutal-xs flex items-center justify-center shrink-0"
+          title={collapsed ? "Expand full sidebar" : "Close sidebar (Icons only)"}
+          aria-label={collapsed ? "Expand full sidebar" : "Close sidebar (Icons only)"}
+        >
+          {collapsed ? (
+            <ChevronRight className="w-4 h-4 text-yellow-300" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-neutral-300 hover:text-white" />
+          )}
+        </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
-        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 px-3 mb-3">
-          Main Menu
-        </p>
+      <nav className={`flex-1 ${collapsed ? "px-2" : "px-3"} py-5 space-y-1.5 overflow-y-auto`}>
+        {!collapsed && (
+          <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 px-3 mb-3">
+            Main Menu
+          </p>
+        )}
         {navItems.map(({ label, tab, icon: Icon }) => {
           const isActive = active === tab;
           return (
             <button
               key={tab}
               onClick={() => onSelect(tab)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-black text-sm transition-all group text-left
+              title={label}
+              className={`w-full flex items-center ${
+                collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5"
+              } rounded-xl font-black text-sm transition-all group text-left
                 ${
                   isActive
                     ? "bg-yellow-300 text-black shadow-brutal-xs"
@@ -201,29 +240,45 @@ function DesktopSidebar({
                   isActive ? "text-black" : "text-neutral-500 group-hover:text-white"
                 }`}
               />
-              <span>{label}</span>
-              {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto text-black" />}
+              {!collapsed && (
+                <>
+                  <span className="truncate">{label}</span>
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto text-black shrink-0" />}
+                </>
+              )}
             </button>
           );
         })}
       </nav>
 
       {/* Upgrade CTA */}
-      <div className="m-3 p-4 rounded-2xl border-2 border-yellow-300/30 bg-yellow-300/10 mb-2">
-        <p className="font-black text-xs text-yellow-300 mb-1">🔓 Unlock More</p>
-        <p className="text-[11px] font-bold text-neutral-400 leading-snug mb-3">
-          Access premium roadmaps and 1:1 live guidance
-        </p>
-        <button
-          onClick={() => onSelect("roadmap")}
-          className="block w-full py-2 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-xs hover:bg-yellow-400 transition-colors shadow-brutal-xs cursor-pointer"
-        >
-          Explore Roadmaps
-        </button>
-      </div>
+      {!collapsed ? (
+        <div className="m-3 p-4 rounded-2xl border-2 border-yellow-300/30 bg-yellow-300/10 mb-2">
+          <p className="font-black text-xs text-yellow-300 mb-1">🔓 Unlock More</p>
+          <p className="text-[11px] font-bold text-neutral-400 leading-snug mb-3">
+            Access premium roadmaps and 1:1 live guidance
+          </p>
+          <button
+            onClick={() => onSelect("roadmap")}
+            className="block w-full py-2 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-xs hover:bg-yellow-400 transition-colors shadow-brutal-xs cursor-pointer"
+          >
+            Explore Roadmaps
+          </button>
+        </div>
+      ) : (
+        <div className="p-2 mb-2 flex justify-center">
+          <button
+            onClick={() => onSelect("roadmap")}
+            title="Unlock Roadmaps"
+            className="w-10 h-10 rounded-xl border-2 border-yellow-300/60 bg-yellow-300/20 text-yellow-300 flex items-center justify-center hover:bg-yellow-300 hover:text-black transition-all shadow-brutal-xs cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Logout in Desktop Sidebar */}
-      <div className="p-3 pt-0 mb-4 shrink-0">
+      <div className={`${collapsed ? "p-2" : "p-3"} pt-0 mb-4 shrink-0 flex justify-center`}>
         <button
           type="button"
           onClick={(e) => {
@@ -231,12 +286,14 @@ function DesktopSidebar({
             e.stopPropagation();
             logoutUser();
           }}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800/80 transition-all shadow-brutal-xs cursor-pointer active:scale-95 touch-manipulation"
+          className={`w-full flex items-center justify-center ${
+            collapsed ? "p-3" : "gap-2 px-3 py-2.5"
+          } rounded-xl font-black text-xs uppercase tracking-wider text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800/80 transition-all shadow-brutal-xs cursor-pointer active:scale-95 touch-manipulation`}
           title="Sign out of student account"
           id="dashboard-sidebar-logout-btn"
         >
           <LogOut className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>Log Out</span>
+          {!collapsed && <span>Log Out</span>}
         </button>
       </div>
     </aside>
@@ -2371,6 +2428,17 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapItem | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+
+  // Restore sidebar collapsed preference on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("dashboard_sidebar_collapsed");
+      if (saved === "true") {
+        setSidebarCollapsed(true);
+      }
+    } catch {}
+  }, []);
 
   // User purchased content state
   const [purchasedCourseSlugs, setPurchasedCourseSlugs] = useState<string[]>([]);
@@ -2542,9 +2610,23 @@ export default function DashboardPage() {
       <DesktopSidebar
         active={activeTab}
         onSelect={handleSelectTab}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() =>
+          setSidebarCollapsed((prev) => {
+            const next = !prev;
+            try {
+              localStorage.setItem("dashboard_sidebar_collapsed", next ? "true" : "false");
+            } catch {}
+            return next;
+          })
+        }
       />
 
-      <div className="flex-1 flex flex-col md:ml-64 min-w-0">
+      <div
+        className={`flex-1 flex flex-col ${
+          sidebarCollapsed ? "md:ml-20" : "md:ml-64"
+        } min-w-0 transition-all duration-300`}
+      >
         {/* Header: Only right side (Logout + Avatar) */}
         <header className="sticky top-0 z-20 h-16 bg-white border-b-[3px] border-black flex items-center justify-end px-4 sm:px-6">
           {/* Right: Logout + Avatar */}
