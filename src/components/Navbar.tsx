@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, User, Menu, X, Terminal, Shield } from "lucide-react";
+import { Moon, Sun, User, Menu, X, Terminal } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -103,14 +103,7 @@ export default function Navbar() {
               : <Moon className="w-4 h-4" style={{ color: "var(--fg)" }} />}
           </button>
 
-          <Link
-            href="/admin"
-            className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-amber-300 hover:bg-amber-400 text-black shadow-brutal-xs hover:-translate-y-0.5 hover:shadow-brutal-sm transition-all"
-            title="Admin Command Center"
-            id="nav-admin-btn"
-          >
-            <Shield className="w-4 h-4 stroke-[2.5]" />
-          </Link>
+
 
           <Link
             href="/login"
@@ -123,13 +116,7 @@ export default function Navbar() {
 
         {/* Mobile: theme + hamburger */}
         <div className="flex md:hidden items-center gap-2">
-          <Link
-            href="/admin"
-            className="w-8 h-8 rounded-full border-2 border-black flex items-center justify-center bg-amber-300 text-black shadow-brutal-xs"
-            title="Admin Console"
-          >
-            <Shield className="w-4 h-4 stroke-[2.5]" />
-          </Link>
+
           <button
             onClick={toggleDarkMode}
             aria-label="Toggle theme"
@@ -194,14 +181,7 @@ export default function Navbar() {
             >
               Student Portal
             </Link>
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-2 border-2 border-black rounded-xl shadow-brutal-sm bg-amber-300 text-black font-black flex items-center justify-between"
-            >
-              <span>Admin Console</span>
-              <Shield className="w-4 h-4 stroke-[2.5]" />
-            </Link>
+
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
