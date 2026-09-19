@@ -65,10 +65,11 @@ The OS executes /usr/local/bin/curl FIRST, immediately granting root shell acces
         }
       ],
       keyTopics: [
-        "Linux Directory Structure: `/etc/passwd`, `/etc/shadow`, `/var/log/auth.log`, `/tmp`, `/dev/shm`",
-        "SecLists installation path: `/usr/share/seclists/` & wordlists management",
-        "Configuring PATH variables, aliases, and persistent zsh/bash profiles",
-        "Package managers: APT repository signing, source lists, and compiling from source",
+        "Linux Filesystem Hierarchy (FHS) Under Adversarial Inspection: The Filesystem Hierarchy Standard organizes Unix directories into functional trees. Key target directories include /etc (system configuration files, user account databases), /var/log (audit trails, authentication logs, web server traces), and /opt (third-party tools). In offensive engagements, knowing where passwords and keys are stored by default allows rapid local privilege assessment upon gaining an initial shell.",
+        "Crucial Target Configuration Files (/etc/passwd, /etc/shadow, /etc/sudoers): /etc/passwd is a world-readable file listing all system user accounts, home directory locations, and default login shells. /etc/shadow is restricted strictly to the root user, containing salted cryptographic password hashes (SHA-512, yescrypt) that can be extracted for offline cracking. /etc/sudoers defines specific execution privileges and command restrictions for administrative users.",
+        "Volatile In-Memory Directories (/dev/shm & /tmp) for Evasion: /dev/shm is a shared memory temporary filesystem mounted directly in RAM (tmpfs), meaning files written here never touch physical disk blocks. When attackers deploy enumeration scripts, exploit compilers, or reverse shell binaries, saving them to /dev/shm evades basic disk-based file integrity monitors. Upon system reboot, all artifacts in /dev/shm vanish completely, minimizing forensic detection.",
+        "Wordlists Architecture & SecLists Integration: SecLists is the security tester's definitive collection of multiple types of lists, including usernames, passwords, URLs, sensitive data patterns, and fuzzing payloads. By default in Kali Linux, wordlists reside in /usr/share/wordlists/, including the iconic rockyou.txt dictionary containing 14.3 million breached passwords. Properly indexing and combining these dictionaries enables high-speed credential stuffing and directory fuzzing.",
+        "PATH Variable Manipulation & Persistent Shell Profiles: The PATH environment variable dictates the directory search order when an executable is invoked without an absolute path. Users configure persistent PATH exports and aliases in ~/.bashrc or ~/.zshrc, while system-wide variables reside in /etc/environment. Placing writable directories before standard system paths creates PATH hijacking vulnerabilities where an attacker overrides standard utilities.",
       ],
       terminalCommands: [
         "sudo apt update && sudo apt install -y seclists curl jq ripgrep",
@@ -140,10 +141,11 @@ SED ONE-LINER CHEATSHEET:
         }
       ],
       keyTopics: [
-        "grep & ripgrep: Regex matching, inverse matching (-v), extract only matching patterns (-o)",
-        "awk: Column manipulation, conditional printing, filtering by HTTP status codes",
-        "sed: Stream editor for search and replace, removing protocols `http://` or trailing slashes",
-        "sort -u & anew: Deduplication without losing stream speed",
+        "UNIX Pipelining & Standard File Descriptors (STDIN, STDOUT, STDERR): The UNIX philosophy connects modular command-line tools using standard streams: STDIN (fd 0), STDOUT (fd 1), and STDERR (fd 2). The pipe operator '|' channels the standard output of one command directly into the standard input of the next without writing temporary files to disk. Redirecting errors with '2>/dev/null' silences permission denied warnings, keeping automated tool streams clean and easily parseable.",
+        "Advanced Pattern Matching with grep & Ripgrep (rg): grep searches text files for lines matching regular expressions, with flags like -i (case-insensitive), -v (invert match), and -E (extended regex). Ripgrep (rg) utilizes Rust's finite state regex engine and memory-mapped files to search multi-gigabyte files 10x faster than traditional grep. Security researchers pipe large recon datasets through grep to filter for specific high-value patterns like exposed API keys or endpoint extensions.",
+        "Text Transformation & Field Extraction via awk: awk is a full-featured programming language designed for column-oriented text processing and data extraction. By default, awk splits lines by whitespace into variables $1, $2, through $NF (the final column), allowing instant filtering like 'awk \"$2 == 200 {print $1}\"'. Using custom delimiters (-F':'), awk effortlessly parses structured records like /etc/passwd or CSV log exports in real-time streams.",
+        "Stream Editing & Regex Substitution with sed: sed (Stream Editor) performs automated search, replace, insertion, and deletion of text in dynamic data pipelines. The substitution command 'sed \"s/regex/replacement/flags\"' replaces matching patterns across millions of URLs in seconds. Using the in-place flag 'sed -i', security analysts can sanitize massive wordlists directly on disk without requiring intermediate scratch files.",
+        "Stream Deduplication with sort -u & anew: Traditional 'sort -u' buffers an entire dataset into memory to sort lines before deduplicating, causing bottlenecks on 500,000-line recon files. Tomnomnom's 'anew' tool reads from standard input and appends only brand-new, unseen unique lines to a master file in real time. This allows continuous reconnaissance scripts to process streaming outputs from multiple tools without generating redundant alerts.",
       ],
       terminalCommands: [
         "cat urls.txt | grep -E '\\.php|\\.aspx' | sort -u > endpoints.txt",
@@ -213,10 +215,11 @@ SED ONE-LINER CHEATSHEET:
         }
       ],
       keyTopics: [
-        "Standard permissions: Read (4), Write (2), Execute (1) across User, Group, Others",
-        "SUID bit vulnerability: Binaries executing with root permissions when invoked by low-privilege users",
-        "GTFOBins: Exploiting legitimate system binaries (`find`, `vim`, `bash`, `python`) to spawn root shells",
-        "Sudoers configuration: Identifying `NOPASSWD` execution rights via `sudo -l`",
+        "Linux Discretionary Access Control (DAC) & Octal Calculations: Linux file permissions use a 9-bit matrix divided into three triads: Owner (User), Group, and Others. The three primary rights are Read (r=4), Write (w=2), and Execute (x=1), summed to produce octal representations (e.g. 754 represents rwxr-xr--). For directories, the execute bit (x) grants permission to enter and traverse the folder, while the write bit (w) allows creating or deleting files within that directory.",
+        "Special Permission Bits (SUID 4000, SGID 2000, Sticky Bit 1000): SUID (Set User ID) instructs the kernel to execute the binary with the permissions of the file owner (typically root) rather than the user who ran it. SGID (Set Group ID) ensures files created inside a folder inherit the parent directory's group ownership, useful for collaborative project directories. The Sticky Bit (1000, displayed as 't' on /tmp) ensures users can only delete or rename files that they personally own, preventing tampering on shared directories.",
+        "SUID Execution Mechanics & Effective User ID (EUID): When an SUID binary executes, the Linux kernel sets its Effective User ID (euid) to 0 (root) while leaving the Real User ID (ruid) as the unprivileged user. If an SUID binary spawns a subshell or executes system commands without dropping privileges, the resulting shell retains root authority. Attackers search for SUID binaries using 'find / -perm -4000 -type f 2>/dev/null' to pinpoint custom administrator wrappers.",
+        "GTFOBins Exploitation Framework: GTFOBins is a curated open-source repository documenting how standard Unix system binaries can be abused to bypass local security restrictions and spawn root shells. If utilities like find, vim, bash, python, or cp have SUID bits or sudo rights, an attacker uses pre-documented escape parameters to break out. For example, 'find . -exec /bin/sh -p ; -quit' immediately spawns a root shell by leveraging find's execution flag.",
+        "Sudoers Specification & Least Privilege Auditing: The /etc/sudoers file defines which users can run specific commands under elevated privileges, controlled via the 'visudo' utility. Running 'sudo -l' lists all administrative commands permitted for the current user session, highlighting NOPASSWD exemptions. Insecure sudoers rules (such as allowing wildcards like 'sudo /bin/cat /var/log/*') allow directory traversal to read restricted files like /etc/shadow.",
       ],
       terminalCommands: [
         "find / -perm -4000 -type f 2>/dev/null",
@@ -283,10 +286,11 @@ SED ONE-LINER CHEATSHEET:
         }
       ],
       keyTopics: [
-        "SSH Key Generation & Hardening: `ssh-keygen -t ed25519`",
-        "Dynamic SOCKS5 Proxy (-D): Tunneling any browser or tool through a remote compromised bastion server",
-        "Local Port Forwarding (-L): Accessing internal MySQL/Redis services listening only on 127.0.0.1",
-        "Proxychains Configuration: Routing Nmap, cURL, and Burp through multi-hop proxy chains",
+        "OpenSSH Cryptographic Foundations (RSA, ED25519, Host Keys): OpenSSH uses asymmetric public-key cryptography to authenticate users and establish encrypted transport tunnels across untrusted networks. Modern deployments prefer Ed25519 keys based on Edwards-curve digital signatures, offering superior performance and resistance to side-channel attacks compared to legacy RSA. A user's private key (id_ed25519) remains confidential on the client, while the public key is appended to ~/.ssh/authorized_keys on the destination server.",
+        "Local Port Forwarding (-L) Tunneling Mechanics: Local port forwarding (ssh -L local_port:dest_ip:dest_port user@server) opens a listening socket on the attacker's local machine that forwards all incoming TCP traffic through the encrypted SSH tunnel to a specific IP and port reachable by the remote SSH server. This allows penetration testers to access internal web servers, databases (like MySQL listening only on 127.0.0.1), or management consoles hidden behind perimeter firewalls.",
+        "Remote / Reverse Port Forwarding (-R) Mechanics: Reverse port forwarding (ssh -R remote_port:dest_ip:dest_port user@server) opens a listening socket on the remote SSH server that forwards traffic back through the tunnel into a service running on the attacker's local machine. This is essential when catching reverse shells from air-gapped target networks that cannot initiate direct connections to your external IP address, routing traffic back through an intermediate bastion host.",
+        "Dynamic Port Forwarding (-D) & SOCKS5 Proxying: Dynamic port forwarding (ssh -D local_port user@server) configures an in-memory SOCKS4/SOCKS5 proxy on the attacker's local machine. Unlike local forwarding which targets a single port, a SOCKS5 proxy dynamically routes arbitrary TCP traffic to ANY destination IP and port accessible from the remote pivot host. This transforms the remote compromised server into a full-featured routing proxy for your entire offensive tool suite.",
+        "Proxychains Configuration & DNS Leak Prevention: Proxychains uses the LD_PRELOAD environment variable to hook network socket calls in dynamically linked binaries, redirecting all outbound TCP connections through designated SOCKS proxies. In /etc/proxychains4.conf, administrators configure 'dynamic_chain' to bypass dead proxies and enable 'proxy_dns' to resolve domain names through the proxy tunnel. Without proxy_dns, local DNS lookups leak to your ISP and fail to resolve internal Active Directory names.",
       ],
       terminalCommands: [
         "ssh -D 9050 -C -q -N user@remote-vps.com",
@@ -352,10 +356,11 @@ SED ONE-LINER CHEATSHEET:
         }
       ],
       keyTopics: [
-        "Managing background jobs: `&`, `ctrl+z`, `bg`, `fg`, `jobs`, `nohup`",
-        "Tmux Mastery: Creating persistent sessions, split panes, detaching (`ctrl+b d`), and reattaching (`tmux attach`)",
-        "Monitoring resource exhaustion: `htop`, `ps aux --sort=-%mem`, killing rogue processes",
-        "Automating session startup via `.tmux.conf` customizations",
+        "POSIX Signals & Process Control Lifecycle: The Linux kernel communicates process events using standardized POSIX signals: SIGINT (Ctrl+C, requests graceful interrupt), SIGTSTP (Ctrl+Z, suspends execution), SIGHUP (Signal 1, sent when terminal closes), and SIGKILL (Signal 9, unconditional termination). Job control commands manage suspended processes: 'bg' resumes a stopped job in the background, 'fg' returns it to the foreground, and 'jobs -l' lists active session tasks with their PIDs.",
+        "Persistent Background Daemons (nohup, &, disown): When an SSH session terminates, the controlling terminal sends SIGHUP to all child processes, terminating long-running port scans and fuzzing tasks. Running a command with 'nohup <command> &' intercepts SIGHUP, allowing the process to continue running indefinitely in the background while logging output to nohup.out. The bash builtin 'disown -h' removes active jobs from the shell's job table so closing the terminal window leaves the process alive.",
+        "Tmux Terminal Multiplexer Architecture: Tmux is a terminal multiplexer running a persistent background server daemon that decouples running shell sessions from the physical graphical terminal window. Within a single Tmux session, users create multiple independent virtual windows and split screens into interactive rows and columns (panes). If a network connection drops or an SSH session freezes, the Tmux server keeps all processes running unaffected on the remote machine.",
+        "Tmux Session Lifecycle & Detach/Attach Commands: Tmux operates around a master prefix key (default Ctrl+b). Users detach from a live session using 'Ctrl+b d', safely closing the remote SSH connection while background scanners execute at full speed. Running 'tmux ls' lists all active background sessions, and 'tmux attach-session -t <name>' instantly reattaches to the exact workspace, restoring running terminal outputs and active shell prompts.",
+        "Process Telemetry & System Resource Monitoring: Long-running brute-force and mass-scanning scripts can easily exhaust target or attack host memory, triggering the Linux kernel's Out-Of-Memory (OOM) killer. The 'htop' utility provides interactive real-time CPU thread, memory, and swap utilization monitoring with color-coded bar graphs. The command 'ps aux --sort=-%mem | head -n 10' identifies rogue memory-leaking processes so they can be safely terminated.",
       ],
       terminalCommands: [
         "tmux new -s bugbounty",
@@ -431,10 +436,11 @@ send_telegram() {
         }
       ],
       keyTopics: [
-        "Shell script structure: `set -euo pipefail` for strict error handling",
-        "Parsing CLI arguments using `getopts`",
-        "Streaming outputs between tools via Linux Unix pipelines without creating giant intermediate files",
-        "Sending real-time Slack/Discord/Telegram webhook notifications when critical findings trigger",
+        "Defensive Bash Architecture & The set -euo pipefail Standard: Robust offensive bash scripts must avoid silent failures that corrupt recon datasets. The directive 'set -e' exits immediately if any command returns a non-zero exit code; 'set -u' treats unset variables as fatal errors; 'set -o pipefail' ensures a pipeline returns the exit code of the first failing command rather than the last. Implementing this triad prevents downstream tools from scanning empty or malformed files when upstream APIs fail.",
+        "Command-Line Argument Parsing with getopts: Professional shell utilities standardize input parameters using the built-in 'getopts' parser, accepting short options like '-d target.com -o results/ -t 50 -h'. Using getopts enables flexible parameter handling with automatic error detection for missing arguments and built-in usage help menus. This ensures custom recon engines can be seamlessly integrated into automated cron tasks and continuous testing pipelines.",
+        "Signal Traps & Automated Workspace Cleanup: The 'trap' command registers handler functions that execute automatically upon receiving specific termination signals (EXIT, SIGINT, SIGTERM). In automated recon pipelines, trap functions delete temporary scratch files from /tmp, kill background subprocesses, and flush memory buffers when an assessment is interrupted. This prevents disk bloat and ensures target systems remain clean after scanning completes.",
+        "Streaming Pipelines & Zero-Disk Data Architecture: In high-scale reconnaissance across 100,000 subdomains, writing intermediate text files for every stage consumes gigabytes of storage and slows down execution. UNIX streaming connects discovery tools directly via pipes (e.g. subfinder | httpx | anew live_targets.txt), processing output lines in memory as fast as packets arrive. This zero-disk architecture maximizes throughput and avoids leaving sensitive asset inventories on multi-tenant cloud servers.",
+        "Real-Time Webhook Alerting (Discord, Telegram, Slack): Continuous asset monitoring engines must notify researchers the exact moment a high-value asset or critical vulnerability is discovered. Scripts format JSON payloads containing discovered subdomains, HTTP status codes, page titles, and timestamps, dispatching them via cURL POST requests to Discord or Telegram Webhook endpoints. This pushes instant mobile notifications to the researcher's phone within minutes of a new staging portal going live.",
       ],
       terminalCommands: [
         "chmod +x auto_recon.sh",

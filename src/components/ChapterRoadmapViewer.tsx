@@ -887,17 +887,22 @@ export default function ChapterRoadmapViewer({
                 </h3>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {activeLesson.keyTopics.map((topic, idx) => {
                   const isDone = completedItems.includes(topic);
+                  const colonIndex = topic.indexOf(":");
+                  const hasSplit = colonIndex !== -1 && colonIndex < 70;
+                  const topicTitle = hasSplit ? topic.slice(0, colonIndex).trim() : null;
+                  const topicDesc = hasSplit ? topic.slice(colonIndex + 1).trim() : topic;
+
                   return (
                     <div
                       key={idx}
                       onClick={() => onToggleItem && onToggleItem(topic)}
-                      className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3 select-none ${
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3.5 select-none ${
                         isDone
-                          ? "bg-emerald-50 border-emerald-600 shadow-brutal-xs"
-                          : "bg-white border-neutral-300 hover:border-black shadow-sm"
+                          ? "bg-emerald-50/80 border-emerald-600 shadow-brutal-xs"
+                          : "bg-white border-neutral-300 hover:border-black shadow-sm hover:shadow-brutal-xs"
                       }`}
                     >
                       <div
@@ -909,13 +914,42 @@ export default function ChapterRoadmapViewer({
                       >
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
-                      <span
-                        className={`text-sm font-bold leading-relaxed ${
-                          isDone ? "text-emerald-950 line-through opacity-75" : "text-black"
-                        }`}
-                      >
-                        {topic}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        {topicTitle ? (
+                          <>
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                              <span
+                                className={`text-sm font-black tracking-tight ${
+                                  isDone ? "text-emerald-950 line-through opacity-75" : "text-black"
+                                }`}
+                              >
+                                {topicTitle}
+                              </span>
+                              <span className="px-1.5 py-0.2 bg-neutral-100 text-neutral-600 border border-neutral-300 rounded font-mono text-[10px] font-bold">
+                                Deep Analysis
+                              </span>
+                            </div>
+                            <p
+                              className={`text-xs sm:text-sm font-medium leading-relaxed pl-3 border-l-2 ${
+                                isDone
+                                  ? "border-emerald-300 text-emerald-900/80"
+                                  : "border-neutral-300 text-neutral-700"
+                              }`}
+                            >
+                              {topicDesc}
+                            </p>
+                          </>
+                        ) : (
+                          <span
+                            className={`text-sm font-bold leading-relaxed ${
+                              isDone ? "text-emerald-950 line-through opacity-75" : "text-black"
+                            }`}
+                          >
+                            {topic}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

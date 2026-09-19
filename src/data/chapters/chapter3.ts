@@ -68,10 +68,11 @@ export const chapter3: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "ASN Discovery: Identifying company IP allocations using BGPview & Hurricane Electric (HE.net)",
-        "Reverse WHOIS: Finding associated domains registered under the same corporate email or registrant name",
-        "Acquisition & Merger Mapping: Researching Crunchbase and SEC 10-K filings to expand bounty scope legally",
-        "Cross-domain SSL certificate correlation to discover stealth staging environments",
+        "Autonomous System Numbers (ASNs) & BGP Routing Allocation: An Autonomous System (AS) is an interconnected collection of IP routing prefixes controlled by a single administrative organization sharing a common routing policy. Organizations advertise their network blocks to global tier-1 telecom carriers via the Border Gateway Protocol (BGP). Discovering an enterprise's ASN (e.g. AS15169 for Google, AS27745 for Uber) reveals every public CIDR IP block legally owned by the company across the entire Internet.",
+        "Regional Internet Registry (RIR) Databases & WHOIS Scoping: Global IP addresses and ASNs are allocated and cataloged by five Regional Internet Registries: ARIN, RIPE NCC, APNIC, LACNIC, and AFRINIC. Querying WHOIS databases via tools like RADb (whois -h whois.radb.net -- '-i origin AS12345') returns authoritative lists of IP ranges registered to that organization. Penetration testers parse these CIDR blocks to map the target's entire network perimeter before initiating active port scans.",
+        "Reverse WHOIS Mapping & Corporate Attribution: While modern domain registrations frequently utilize WHOIS Privacy Guard services, historical registration records often preserve the original registrant email, administrative phone number, or physical corporate address. Reverse WHOIS engines (DomainTools, Whoxy) search historical databases to identify all domains registered with that specific corporate email address. This exposes forgotten marketing campaigns, legacy acquisitions, and unmonitored staging portals.",
+        "Corporate Mergers, Acquisitions & SEC 10-K Filings: When large enterprises acquire startups, the newly acquired company's infrastructure is often absorbed into the parent organization's bug bounty scope long before security policies are standardized. Reviewing public financial filings (such as US SEC Form 10-K Exhibit 21) reveals a comprehensive legal list of all corporate subsidiaries and joint ventures. Testing these subsidiary assets frequently yields high-severity vulnerabilities due to outdated software and patch lag.",
+        "Reverse IP Lookups & Shared Virtual Hosting Architecture: A reverse IP lookup determines all hostnames associated with a specific IP address by analyzing historical DNS A records, PTR records, and shared SSL certificate databases. On shared cloud infrastructure (AWS EC2, Cloudflare edge nodes), thousands of distinct websites share the same IP, whereas on dedicated enterprise hosting, reverse IP queries uncover unlinked corporate portals. Identifying co-located hosts reveals internal administrative interfaces sharing the same server.",
       ],
       terminalCommands: [
         "whois -h whois.radb.net -- '-i origin AS15169'",
@@ -143,10 +144,11 @@ export const chapter3: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "How Certificate Transparency works: Merkle tree architecture and RFC 6962 compliance",
-        "Querying crt.sh & C99 for subdomains and SAN (Subject Alternative Names)",
-        "Real-time CT log streaming with `certstream` to catch new staging domains",
-        "Automating CT log ingestion and deduplication in bash pipelines",
+        "Certificate Transparency (CT) Merkle Tree Architecture: Certificate Transparency (RFC 6962) is an open cryptographic framework created to detect and audit fraudulently issued SSL/TLS certificates. Public Certificate Authorities (Let's Encrypt, DigiCert, Sectigo) are required to log every public certificate they issue to public, append-only, cryptographically verifiable Merkle trees before browsers trust them. Because these logs are permanently public and unmodifiable, researchers query them to passively discover every domain and subdomain ever provisioned.",
+        "Subject Alternative Names (SAN) Mining via crt.sh: When modern SSL certificates are generated, administrators frequently bundle multiple hostnames into a single certificate using the Subject Alternative Name (SAN) extension. Querying public CT aggregators like crt.sh with wildcards (curl 'https://crt.sh/?q=%.target.com&output=json') extracts thousands of subdomains, including internal test servers, VPN gateways, and development clusters. Parsing these records via jq and anew produces a clean, deduplicated target inventory.",
+        "Real-Time Certificate Streaming with Certstream: Certstream is an open-source intelligence service that aggregates real-time certificate issuance updates from all global CT log operators into a centralized WebSocket stream. Security researchers deploy Python or Go daemons that filter the live stream for target company keywords (e.g. matching 'target.*' or '.*-target.com'). This triggers instant alerts within minutes of a sysadmin provisioning an SSL certificate for a new server, long before DNS propagates globally.",
+        "Zero-Packet Passive Reconnaissance Advantages: Because Certificate Transparency logs are maintained by third-party search engines and CAs, querying CT data sends exactly zero network packets to the target organization's infrastructure. The target's Intrusion Detection Systems (IDS), Web Application Firewalls (WAF), and Security Operations Centers (SOC) have zero visibility into this reconnaissance phase. This allows researchers to map out complete corporate networks completely undetected.",
+        "Identifying Pre-Production & Staging Assets in CT Logs: Developers routinely provision valid TLS certificates for staging environments weeks before launch to test HTTPS compatibility in development pipelines. Subdomains discovered in CT logs containing strings like 'dev-', 'stage-', 'uat-', 'internal-', or 'vpn-' represent the highest-value targets for bug bounty hunting. These servers frequently have default credentials, disabled authentication gates, and verbose debugging error pages enabled.",
       ],
       terminalCommands: [
         "curl -s 'https://crt.sh/?q=%.target.com&output=json' | jq -r '.[].name_value' | sed 's/\\*\\.//g' | sort -u",
@@ -212,10 +214,11 @@ TRUFFLEHOG COMMAND:
         }
       ],
       keyTopics: [
-        "GitHub Dorking syntax for exposed credentials and database strings",
-        "Inspecting dangling Git commits and squashed pull requests",
-        "Automated secret scanning with TruffleHog and Gitleaks",
-        "Ethical verification of AWS, GCP, Azure, and Stripe API keys",
+        "Public Source Code Secret Leakage & Developer Pitfalls: Modern Agile development encourages rapid code pushes to public platforms like GitHub, GitLab, and Bitbucket. Developers working on enterprise projects frequently fork corporate repositories to their personal accounts or commit private configuration files (.env, credentials.json, id_rsa) by accident. Even if a repository is made private hours later, public commit scrapers and historical mirror engines often preserve the leaked secrets permanently.",
+        "Git Object Tree Forensics & Dangling Commits: When a developer realizes they committed a secret and executes 'git rm' in a subsequent commit, the secret REMAINS FULLY ACCESSIBLE in the Git commit history object tree. Running 'git log -p -S \"password\"' or inspecting the raw commit history with tools like GitKraken reveals the plaintext secret in the commit diff. Attackers also inspect dangling commits, abandoned branches, and squashed pull requests to recover deleted keys.",
+        "Automated Secret Detection with TruffleHog & Gitleaks: TruffleHog and Gitleaks are specialized tools that scan Git repositories, commit histories, and filesystems for sensitive credentials using both regex signatures and Shannon entropy algorithms. Shannon entropy calculates the mathematical randomness of character strings, flagging high-entropy strings characteristic of base64-encoded API keys, AWS access tokens, and private SSH keys. TruffleHog also verifies if discovered AWS, Slack, or GitHub keys are currently active.",
+        "High-Impact Secret Signatures (AWS, GCP, Slack, Stripe): Key signatures to look for include: AWS Access Key IDs (starting with 'AKIA' followed by 16 alphanumeric characters), Slack Bot Tokens ('xoxb-'), Google Cloud Service Account private keys, and Stripe Live API keys ('sk_live_'). Discovering a high-privilege cloud credential allows an attacker to take over the target's entire cloud infrastructure without exploiting any web application software vulnerabilities.",
+        "GitHub Dorking Syntax & Corporate Organization Scoping: GitHub Dorking leverages advanced search operators within GitHub's code search engine: 'org:targetcompany' limits queries strictly to company-owned repositories. Queries like 'org:targetcompany filename:.env DB_PASSWORD' or '\"target.com\" filename:credentials' uncover exposed database connection URIs, internal API keys, and private tokens. Researchers also search for employee personal accounts and public Gists to locate leaked debugging scripts.",
       ],
       terminalCommands: [
         "trufflehog git https://github.com/target/repo.git",
@@ -281,10 +284,11 @@ TRUFFLEHOG COMMAND:
         }
       ],
       keyTopics: [
-        "Shodan query operators: `org:`, `asn:`, `ssl:`, `port:`, `http.title:`",
-        "Calculating Favicon MurmurHash3 to locate hidden corporate infrastructure",
-        "Finding unauthenticated MongoDB, Elasticsearch, and Redis clusters",
-        "Bypassing Cloudflare and Akamai WAFs by identifying origin server IPs",
+        "Internet-Wide Port Scanning Architecture (Shodan & Censys): Search engines like Shodan and Censys continuously scan the entire IPv4 address space across hundreds of standard ports (80, 443, 21, 22, 3389, 8080, 27017). They establish TCP connections, capture the initial service greeting or HTTP banner, and index the results into a massive, searchable database. Querying Shodan allows penetration testers to inspect an enterprise's external attack surface without transmitting a single packet from their own IP.",
+        "Shodan Query Operators & Filter Customization: Shodan supports specialized search operators that allow precise asset filtering: 'org:\"Target LLC\"' isolates hosts registered to a specific corporate entity; 'asn:AS12345' limits results to specific BGP routing prefixes. Filters like 'port:3389' find exposed Remote Desktop (RDP) servers, 'product:\"Apache httpd\"' pinpoints web servers, and 'http.title:\"Dashboard\"' isolates administrative interfaces, helping researchers locate high-risk entry points in seconds.",
+        "Bypassing Cloudflare WAFs via SSL Certificate Hashes: Enterprises place Cloudflare, Akamai, or AWS CloudFront in front of their websites to filter malicious traffic and block IP-based attacks. However, the origin web server behind the CDN often remains directly reachable on the public Internet. By searching Shodan or Censys for the unique SSL certificate serial number or Subject Common Name (ssl:\"target.com\" 200), researchers locate the real origin server IP, allowing them to bypass the WAF completely.",
+        "Favicon MurmurHash3 Fingerprinting Technique: Modern web applications display unique visual icons in browser tabs (favicon.ico). By downloading a target's favicon, encoding it in base64, and calculating its 32-bit MurmurHash3 value in Python, researchers generate a unique cryptographic hash for that application. Searching Shodan for 'http.favicon.hash:<hash>' instantly uncovers every server on the Internet hosting that specific application, revealing unlinked staging and development servers worldwide.",
+        "Unauthenticated Databases & Industrial Control Systems: Thousands of production databases are accidentally exposed directly to the public Internet without password authentication. Shodan queries like 'product:\"MongoDB\" \"authentication: disabled\"' or 'product:\"Redis\" \"redis_version\" -auth' locate unprotected databases holding customer records. Attackers can connect directly via command-line clients (e.g. mongo or redis-cli) to dump customer databases without exploiting any application flaws.",
       ],
       terminalCommands: [
         "shodan search --limit 10 'org:\"Target Company\" port:443'",
@@ -359,10 +363,11 @@ TRUFFLEHOG COMMAND:
         }
       ],
       keyTopics: [
-        "Mining Wayback Machine, AlienVault OTX, and Common Crawl using `gau` and `waybackurls`",
-        "Using `uro` to declutter parameter noise and eliminate pagination bloat",
-        "Classifying URLs into vulnerability categories with `gf` patterns",
-        "Analyzing historical JavaScript files for deprecated internal endpoints",
+        "The Internet Archive & Historical Endpoint Mining: The Wayback Machine (archive.org), AlienVault OTX, and Common Crawl have indexed billions of web pages and HTTP requests over the past two decades. Over time, applications add and remove features, but legacy backend API endpoints frequently remain live on the server even when frontend UI links are deleted. Mining historical URLs allows security researchers to discover deprecated endpoints (like /api/v1/auth) that lack modern security controls.",
+        "Automating Historical URL Extraction with gau & waybackurls: Tools like 'gau' (GetAllUrls) and 'waybackurls' query multiple public archive APIs simultaneously, returning tens of thousands of historical URLs for a target domain in seconds. By piping target domains through these utilities (e.g. 'gau target.com | anew urls.txt'), researchers build a comprehensive database of historic endpoints, subdirectories, and uploaded documents without sending any active traffic to the target server.",
+        "URL Decluttering & Pattern Deduplication with uro: Scraping historical archives frequently returns thousands of redundant URLs caused by blog pagination, e-commerce product catalogs, and image assets (e.g. /product?id=1 through /product?id=9999). The 'uro' utility analyzes URL structures, stripping out duplicate paths and static media extensions while preserving unique query parameter combinations. This reduces a noisy 100,000-line dataset down to a razor-sharp list of 500 unique testing candidates.",
+        "Isolating Injection Candidates via gf Regex Patterns: The 'gf' (Go Framework) utility applies pre-compiled regular expression patterns to large URL lists to categorize endpoints by vulnerability type. Running 'cat urls.txt | gf ssrf' extracts all URLs containing parameters like 'url=', 'dest=', 'path=', or 'redirect='. Similarly, 'gf sqli', 'gf xss', and 'gf idor' isolate high-value parameters, allowing researchers to prioritize testing against parameters most likely to accept malicious inputs.",
+        "Historical JavaScript Analysis & Deprecated API Discovery: Historical web archives preserve snapshots of JavaScript files (app.min.js) across different software releases. Security analysts download and beautify these historical script files, comparing old versions against current builds using 'diff'. This analysis frequently uncovers internal API endpoints, developer debugging flags, and administrative routes that were hidden from the public interface but remain fully operational on the server backend.",
       ],
       terminalCommands: [
         "gau target.com | uro | anew urls.txt",
@@ -430,10 +435,11 @@ TRUFFLEHOG COMMAND:
         }
       ],
       keyTopics: [
-        "Advanced Google Dorking syntax: `site:`, `filetype:`, `inurl:`, `intitle:`, `-` negation",
-        "Mining the Google Hacking Database (GHDB) on Exploit-DB",
-        "Locating exposed database dumps (`.sql`), `.env` files, and `.git` directories",
-        "Analyzing `robots.txt` and `sitemap.xml` for hidden administrative paths",
+        "Advanced Search Engine Operators (Google Dorking Syntax): Google Dorking leverages advanced search operators to instruct search engine crawlers to return sensitive, unlinked corporate assets. The operator 'site:target.com' restricts results strictly to the target domain; 'filetype:sql' or 'ext:env' isolates specific file extensions. Operators like 'inurl:admin' match strings in the URI path, 'intitle:\"Index of /\"' finds open directory listings, and '-www' negates the primary public portal to highlight obscure subdomains.",
+        "The Google Hacking Database (GHDB) on Exploit-DB: Maintained by the security community on Exploit-DB, the Google Hacking Database (GHDB) catalogs thousands of proven, weaponized search queries categorized by risk. Categories include exposed credentials, sensitive directories, web server error messages, vulnerable third-party components, and network hardware portals. Researchers reference the GHDB to automate Google queries that target specific software frameworks used by their target.",
+        "Locating Exposed Database Backups, Logs & .env Files: Developers frequently leave database backup dumps and configuration files on public web servers during server migrations or maintenance. Dorks like 'site:target.com ext:sql OR ext:bak OR ext:env \"DB_PASSWORD\"' locate files containing raw SQL INSERT statements with customer password hashes. Similarly, 'site:target.com ext:log' uncovers application debug logs that leak session cookies, internal IP addresses, and stack traces.",
+        "Open Directory Listings & Web Server Indexing Flaws: When a web server (Apache, Nginx, IIS) receives a request for a directory that lacks a default index file (index.html, index.php), it can automatically generate an HTML directory listing if 'Options +Indexes' is enabled. Dorks like 'site:target.com intitle:\"Index of /\" \"Parent Directory\"' expose entire filesystem directories to the public Internet. Attackers browse these open folders to download private PDF invoices, source code archives, and internal manuals.",
+        "Robots.txt & Sitemap.xml Reconnaissance: The robots.txt file instructs search engine web crawlers which parts of a website should not be indexed, using directives like 'Disallow: /admin-panel/'. Because administrators use robots.txt to hide sensitive portals, it functions as an inadvertent attack surface roadmap for security researchers. Reviewing /robots.txt and /sitemap.xml on every discovered subdomain reveals proprietary administrative dashboards and internal API endpoints.",
       ],
       terminalCommands: [
         "curl -s https://target.com/robots.txt",

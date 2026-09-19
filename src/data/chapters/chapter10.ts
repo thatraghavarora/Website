@@ -68,10 +68,11 @@ export const chapter10: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Public vs Private bug bounty programs: invitation algorithms and competition dynamics",
-        "Understanding HackerOne Signal, Impact, and Reputation mechanics",
-        "Legal Safe Harbor frameworks and rules of engagement compliance",
-        "Coordinated vulnerability disclosure guidelines (90-day disclosure window)",
+        "The Bug Bounty Platform Ecosystem (HackerOne, Bugcrowd, Intigriti): Bug bounty platforms operate as crowdsourced vulnerability marketplaces connecting independent security researchers with enterprise software vendors. Programs deposit bounty pools and define strict scopes of engagement. Public programs allow anyone to participate, resulting in intense competition on common assets, while private programs are invite-only, offering higher bounty payouts and significantly lower researcher competition.",
+        "Platform Reputation Metrics (Signal, Impact, and Reputation): Platforms utilize mathematical scoring algorithms to evaluate researcher reliability. HackerOne's 'Signal' metric measures the ratio of valid, accepted vulnerability reports to invalid or spam submissions (a Signal above 3.0 is required for consistent private invites). 'Impact' measures the average severity rating of accepted findings. Submitting low-quality, out-of-scope, or automated scanner reports degrades Signal, disqualifying researchers from lucrative private programs.",
+        "Legal Safe Harbor Frameworks & Rules of Engagement: The Safe Harbor agreement provides legal protection under computer fraud statutes (such as the US CFAA) for researchers acting in good faith within program guidelines. Testing must strictly adhere to the defined 'In Scope' assets, completely avoiding out-of-scope domains. Prohibited testing activities include Denial of Service (DoS), physical social engineering, automated rate-limit flooding, and accessing or exfiltrating private customer data.",
+        "Proof-of-Concept Restraint & Data Minimization Ethics: When discovering critical data exposure vulnerabilities (such as SQL Injection or SSRF), researchers must practice strict data minimization. Extracting the database version (SELECT @@version) or current username is sufficient to prove exploitation. Dumping millions of real customer credit cards or medical records creates severe legal liability, violates privacy regulations (GDPR, HIPAA), and leads to immediate report disqualification.",
+        "Coordinated Vulnerability Disclosure (90-Day Policy): Coordinated disclosure balances public transparency with vendor remediation timelines. The global industry standard enforces a 90-day disclosure window: researchers notify the vendor and withhold all public details while software engineers develop and deploy security patches. Publishing vulnerability write-ups or tweeting proof-of-concept exploits before patches are verified constitutes irresponsible disclosure and results in permanent platform bans.",
       ],
       terminalCommands: [
         "# Verify target scope using WHOIS and DNS records before testing:",
@@ -149,10 +150,11 @@ and resulting in full AWS infrastructure compromise.
         }
       ],
       keyTopics: [
-        "Structuring professional vulnerability reports for rapid triage acceptance",
-        "Writing deterministic, step-by-step reproduction walkthroughs",
-        "Chaining low-severity findings into critical business-impact exploits",
-        "Actionable remediation recommendations for development teams",
+        "Executive Summary & Business Impact Framing: An elite vulnerability report begins with an Executive Summary that translates technical software flaws into tangible business risk for non-technical leadership. Rather than simply stating 'Stored XSS on parameter q', explain: 'An unauthenticated attacker can inject persistent JavaScript into the user profile page, enabling full session hijacking of all customers who visit the portal'. Clearly articulating risk prevents triagers from downgrading severity ratings.",
+        "Deterministic Step-by-Step Reproduction Walkthroughs: Triagers review dozens of submissions daily; reports with vague or inconsistent steps are delayed or closed as 'Needs More Info'. A professional report provides numbered, deterministic steps that can be reproduced from a completely fresh, unauthenticated browser session. Every step specifies the exact URL, HTTP method, parameter names, and attack payloads without requiring the triager to guess missing context.",
+        "Raw HTTP Proof of Concept Inclusion: Never rely solely on screenshots or visual screen recordings. A professional report always includes the exact raw HTTP request captured in Burp Suite and the server's raw HTTP response highlighting the executed payload or reflected data. Providing raw HTTP frames allows engineering teams to reproduce the issue instantly via command-line cURL scripts and create automated regression tests.",
+        "Vulnerability Chaining for Maximum Severity Escalation: Individual low-severity vulnerabilities often pay nominal rewards ($100 to $250). However, chaining multiple minor flaws together creates critical high-impact exploits: chaining an open redirect with an OAuth flow leads to full Account Takeover ($5,000); chaining a local file inclusion with a log injection leads to Remote Code Execution ($15,000). Always explore how a minor finding can be combined with other endpoints.",
+        "Actionable Code-Level Remediation Recommendations: Conclude every report with precise, code-level remediation guidance tailored to the target's technology stack. Instead of generic advice like 'sanitize input', provide concrete recommendations: 'Implement parameterized prepared statements using PDO', 'Apply context-aware HTML entity encoding using DOMPurify', or 'Enforce strict whitelist validation on the redirect_uri parameter'. Providing remediation advice builds trust with engineering teams.",
       ],
       terminalCommands: [
         "# Format clean markdown report files for submission:",
@@ -220,10 +222,11 @@ and integrity for all user accounts."`
         }
       ],
       keyTopics: [
-        "CVSS 3.1 metric definitions: AV, AC, PR, UI, S, C, I, A",
-        "The impact of the Scope (`S:C`) metric on final score calculations",
-        "Technical negotiation strategies for defending severity ratings with triagers",
-        "Writing enterprise remediation advisories for software architects",
+        "Common Vulnerability Scoring System (CVSS 3.1) Architecture: CVSS 3.1 is the global open standard maintained by FIRST.org for communicating the characteristics and severity of software vulnerabilities. Scores range from 0.0 to 10.0: None (0.0), Low (0.1-3.9), Medium (4.0-6.9), High (7.0-8.9), and Critical (9.0-10.0). Base metrics evaluate intrinsic characteristics: Exploitability (Attack Vector, Complexity, Privileges, User Interaction) and Impact (Confidentiality, Integrity, Availability).",
+        "The Critical Scope (S:C vs S:U) Metric Multiplier: The Scope metric measures whether a vulnerability in an authority component impacts resources managed by a different authority. If a vulnerability breaches security boundaries (such as Cross-Site Scripting executing in a user's browser, or SSRF in a web app compromising cloud hypervisor metadata), Scope is evaluated as 'Changed' (S:C). Changing Scope from Unchanged to Changed dramatically increases the mathematical score, elevating High findings into Critical territory.",
+        "Defending Severity Ratings in Triage Disputes: When program triagers attempt to downgrade a vulnerability's severity to reduce payout amounts, researchers must defend their rating using technical facts rather than emotion. Reference official FIRST.org specification guidelines: quote specific clauses (e.g. 'According to CVSS 3.1 Section 2.1, Attack Complexity is Low because exploitation requires zero specialized conditions or timing dependencies'). Providing objective RFC citations ensures fair evaluation.",
+        "Evaluating Confidentiality, Integrity & Availability Impact: Impact metrics reflect the worst-case consequence of successful exploitation. High Confidentiality (C:H) indicates complete loss of confidential customer data; High Integrity (I:H) indicates the attacker can modify any data or execute arbitrary transactions; High Availability (A:H) indicates complete denial of service. Accurately scoring these metrics ensures the vulnerability is prioritized correctly by enterprise patch management teams.",
+        "Enterprise Remediation Advisories & Patch Verification: Once a report is resolved, security researchers review the vendor's patch in production or staging environments. If the vendor implemented a superficial regex blacklist instead of a proper architectural fix, researchers can frequently bypass the patch within days. Re-breaking a flawed patch is considered a brand-new valid vulnerability report, highlighting the importance of thorough patch verification.",
       ],
       terminalCommands: [
         "# Calculate CVSS score using CLI or online calculator (FIRST.org):",
@@ -290,10 +293,11 @@ Thank you for your time and assistance."`
         }
       ],
       keyTopics: [
-        "The economics of the first-to-find model and duplicate mitigation tactics",
-        "Requesting duplicate validation timestamps from platform triagers",
-        "Executing formal platform mediation on HackerOne and Bugcrowd",
-        "Upgrading Informational closures into bounty-eligible findings through impact escalation",
+        "The First-to-Find Rule & Duplicate Economics: In bug bounty programs, monetary bounties are awarded exclusively to the FIRST researcher who submits a valid report. If another researcher reports the exact same bug five minutes later, the second submission is closed as Duplicate ($0). Duplicates are an inevitable reality of crowdsourced security; top researchers accept duplicates professionally and pivot to hunting on newer, less crowded scope assets.",
+        "Duplicate Mitigation Strategies: To minimize duplicate collisions, avoid running generic public scanners (like default Nuclei templates) against primary marketing homepages. Focus instead on: 1. Complex multi-tenant business logic flaws and authorization bypasses (IDOR); 2. Obscure subdomains discovered via real-time Certstream monitoring; 3. Mobile application API endpoints; 4. Multi-step race conditions in payment checkouts.",
+        "Requesting Impartial Duplicate Verification: If you suspect a report was closed as Duplicate in bad faith, request polite clarification from platform triagers: 'Could you please confirm if the earlier report was submitted against this exact endpoint and parameter, or if it was on a different service?'. On platforms like HackerOne and Bugcrowd, triagers will review the earlier report's timestamp and ensure the duplicate claim is valid.",
+        "Platform Mediation on HackerOne & Bugcrowd: When a formal disagreement arises regarding report severity, scope eligibility, or unfair closures, researchers can request Platform Mediation. An independent senior staff member from HackerOne or Bugcrowd steps in to review the report history, technical evidence, and program policies, issuing an impartial, binding ruling. Requesting mediation should be reserved strictly for genuine contract disputes.",
+        "Upgrading Informational Closures via Impact Escalation: When a company closes a submission as 'Informational' claiming the bug has no real security impact, do not argue theoretically. Take the time to build a weaponized Proof of Concept demonstrating real-world harm. For example, if a CSRF on a bio field was marked Informational, chain it to an internal API to demonstrate full account takeover, then re-open the report with the new evidence to secure full payout.",
       ],
       terminalCommands: [
         "# Document timestamped PoC proof using local terminal:",
@@ -362,10 +366,11 @@ Thank you for your time and assistance."`
         }
       ],
       keyTopics: [
-        "Leveraging public bug bounty profiles and write-ups for high-paying AppSec roles",
-        "The certification landscape: OSCP, OSWE, BSCP, and practical hands-on exams",
-        "Transitioning from black-box testing to white-box source code auditing",
-        "Professional ethics, responsible disclosure, and building an enduring reputation",
+        "Translating Bug Bounty Success into High-Paying Careers: An established track record in bug bounty hunting serves as definitive proof of real-world offensive capability. Public rankings on HackerOne/Bugcrowd leaderboards and acknowledgments in Halls of Fame (Apple, Google, Microsoft, NASA) are highly valued by corporate recruiters. Researchers leverage these achievements to secure lucrative careers as Senior Penetration Testers, Red Team Operators, and Application Security (AppSec) Engineers.",
+        "Practical Hands-On Industry Certifications: The cybersecurity industry prioritizes hands-on practical 24-hour exam certifications over multiple-choice tests. The gold standard roadmap includes: 1. OSCP (Offensive Security Certified Professional - Network & OS Pentesting); 2. OSWE (Offensive Security Web Expert - Advanced Web Exploitation & White-Box Source Code Review); 3. BSCP (Burp Suite Certified Practitioner); 4. CRTO (Certified Red Team Operator).",
+        "The White-Box Source Code Auditing Advantage: The top 1% of security researchers do not rely solely on black-box external probing; they read and audit source code directly (white-box testing). Developing proficiency in Python, Go, Java, PHP, and JavaScript allows researchers to identify subtle cryptographic flaws, race conditions, and deserialization vulnerabilities directly in open-source GitHub repositories before software is compiled.",
+        "Publishing Technical Research & Personal Brand Building: Once vulnerabilities are patched and approved for disclosure, writing detailed technical post-mortems on personal blogs or Medium builds personal brand equity in the global infosec community. Sharing root cause analyses, novel exploitation techniques, and defensive takeaways establishes technical authority and attracts direct consulting contracts from enterprise clients.",
+        "Ethical Responsibility & The Hacker Code of Ethics: The offensive capabilities required to discover zero-day vulnerabilities carry immense legal and ethical responsibility. Elite security researchers never weaponize their knowledge for extortion, illegal data exfiltration, or black-market exploit sales. The true mission of offensive cybersecurity is to uncover vulnerabilities ethically, assist engineering teams in remediation, and make the global digital ecosystem safer for everyone.",
       ],
       terminalCommands: [
         "# Start building your public portfolio on GitHub:",

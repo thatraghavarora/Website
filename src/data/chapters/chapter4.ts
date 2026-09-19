@@ -66,10 +66,11 @@ export const chapter4: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Port Scanning Flag Combos: `-sS -sV -sC -Pn -T4 --open`",
-        "Scanning all 65,535 ports: `-p- --min-rate 1000`",
-        "Firewall evasion: Fragmenting packets (`-f`), MTU manipulation (`--mtu 24`), spoofing source port (`--source-port 53`)",
-        "Decoy scanning (`-D`) to obscure true origin IP addresses",
+        "TCP Half-Open (SYN) Stealth Scanning Mechanics: Nmap's SYN scan (-sS) crafts raw TCP packets to probe destination ports without completing the 3-way handshake. If the target port is open, it responds with SYN-ACK; Nmap immediately transmits an RST packet to tear down the connection before an application session is established. Because the full connection is never completed, standard application-layer logs (like Apache or Nginx access logs) record zero traces of the inbound connection.",
+        "Full TCP Connect Scanning (-sT) & SOCKS Proxy Limitations: A TCP Connect scan uses the operating system's standard connect() system call to complete the full 3-way handshake (SYN -> SYN-ACK -> ACK). While noisier and slower than SYN scanning, Connect scanning is mandatory when running Nmap without root privileges or when routing scan traffic through SOCKS proxies with Proxychains. SOCKS proxies operate at the TCP layer and cannot forward raw half-open SYN packets.",
+        "Scanning All 65,535 Ports & Timing Rate Optimization: Port scanning by default checks only the top 1,000 most common ports, missing services running on non-standard ports (like HTTP on 8080, 8443, or 8888). Scanning all 65,535 ports (-p-) can take hours unless tuned with performance flags: '--min-rate 1500' forces Nmap to send at least 1,500 packets per second, completing a full port scan in under 3 minutes. Timing template -T4 optimizes timeouts for reliable broadband networks.",
+        "Firewall Evasion via Packet Fragmentation & MTU Manipulation: Stateless firewalls and basic packet filters inspect incoming TCP headers by looking for known signatures in a single packet. Passing '-f' or '--mtu 24' instructs Nmap to split the 20-byte TCP header across multiple tiny 8-byte or 16-byte IP fragments. Naive packet inspection firewalls fail to inspect signatures split across fragmented payloads, allowing probes to pass through to the internal service.",
+        "Decoy Scanning (-D) & Source Port Spoofing (--source-port 53): Decoy scanning (-D RND:10) transmits scan packets from 10 randomly generated IP addresses simultaneously alongside the attacker's real IP. Target firewall logs show 11 simultaneous port scans originating from different parts of the world, making it nearly impossible for defenders to pinpoint the true attacker. Source port spoofing (--source-port 53) exploits firewall rules that blindly trust inbound traffic originating from DNS port 53.",
       ],
       terminalCommands: [
         "sudo nmap -sS -p- --min-rate 2000 -T4 target.com -oN full_ports.txt",
@@ -143,10 +144,11 @@ export const chapter4: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Script categories: `default`, `vuln`, `auth`, `safe`, `discovery`",
-        "SSL/TLS audit scripts: `ssl-enum-ciphers`, `ssl-heartbleed`",
-        "Web vulnerability discovery scripts: `http-enum`, `http-headers`, `http-methods`",
-        "Matching service version signatures to CVEs using `vulners`",
+        "Nmap Scripting Engine (NSE) Lua Architecture: The Nmap Scripting Engine (NSE) embeds a high-performance Lua interpreter directly into Nmap, enabling automated network vulnerability detection and service exploitation. Pre-installed scripts reside in /usr/share/nmap/scripts/ indexed by /usr/share/nmap/scripts/script.db. Scripts execute in parallel across discovered open ports using Lua coroutines, making NSE significantly faster than running standalone vulnerability scanning tools.",
+        "NSE Script Categories & Safe vs Intrusive Classifications: NSE scripts are organized into distinct functional categories: 'default' (fast, low-noise reconnaissance scripts), 'vuln' (scans for known CVEs like EternalBlue and Log4j), and 'auth' (audits default credentials). The 'safe' category includes passive scripts guaranteed not to crash services, whereas 'intrusive' scripts send malformed payloads that carry a risk of causing denial-of-service on legacy or unstable industrial systems.",
+        "SSL/TLS Cryptographic Auditing with ssl-enum-ciphers: Running 'nmap -p 443 --script ssl-enum-ciphers <target>' connects to HTTPS services and systematically tests every supported TLS version and cryptographic cipher suite. The script grades each cipher, flagging deprecated protocols (SSLv3, TLS 1.0, TLS 1.1) and vulnerable ciphers (CBC-mode ciphers vulnerable to POODLE, RC4, export ciphers). This provides instant proof of compliance failures during security assessments.",
+        "Matching Service Versions to CVEs with vulners: The 'vulners' NSE script queries the public Vulners.com vulnerability database using the exact service name and version detected by Nmap's service scan (-sV). When an outdated service is identified (e.g. OpenSSH 7.2p2 or Apache 2.4.29), the script returns a prioritized table of known CVE identifiers, public exploit links, and CVSS severity scores, turning an ordinary port scan into a structured vulnerability report.",
+        "Custom Script Arguments (--script-args) & Authenticated Audits: Many NSE scripts require runtime configuration parameters, passed via the '--script-args' flag. For instance, testing administrative interfaces requires passing custom credentials ('--script-args user=admin,pass=admin') or custom dictionary paths. Using script arguments allows penetration testers to perform deep authenticated audits against SMB, databases, and web applications using a single unified command line.",
       ],
       terminalCommands: [
         "nmap -p 443 --script ssl-enum-ciphers target.com",
@@ -208,10 +210,11 @@ export const chapter4: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Asynchronous packet transmission mechanics and cryptographic sequence hashes",
-        "Managing packet transmission rates (`--rate`) to prevent firewall saturation",
-        "RustScan integration for sub-second 65k port discovery",
-        "Two-tier scanning methodology: Masscan for discovery + Nmap for deep service analysis",
+        "Asynchronous Stateless Scanning vs Stateful Sockets: Traditional port scanners like Nmap maintain state tables in memory for every transmitted probe, waiting for timeouts before adjusting packet velocity. Masscan operates as an asynchronous raw packet generator based on the pf_ring and DPDK architectures, maintaining zero state in memory. Masscan transmits raw TCP SYN packets at wire speed (up to 10 million packets per second), allowing it to scan the entire 4.2 billion IPv4 address space in under 6 minutes.",
+        "Cryptographic Sequence Hashing for Port Response Validation: Because Masscan maintains zero connection state in memory, it validates incoming SYN-ACK replies using mathematical cryptography. When Masscan crafts a probe, it encrypts the destination IP and port into the 32-bit TCP Sequence number using a secret internal key. When the target echoes this value back in the Acknowledgment number (ISN+1), Masscan decrypts and verifies the hash, confirming the port is open without state lookup overhead.",
+        "Rate Control Mechanics (--rate) & Network Saturation Risks: Transmitting packets at high rates without rate control will saturate local network routers, drop packets, and trigger aggressive ISP abuse filters. On standard consumer networks or cloud VPS instances, Masscan must be constrained using '--rate 1000' or '--rate 2500' (packets per second) to prevent exhausting NAT translation tables. Only dedicated enterprise fiber connections with hardware bypass drivers should exceed 100,000 pps.",
+        "RustScan Sub-Second Multi-Threading Architecture: RustScan is a modern port scanner written in Rust that achieves sub-second port discovery across all 65,535 ports using asynchronous Tokio socket workers. RustScan scans a target host for open ports in under 3 seconds, automatically formats the discovered open ports, and passes them directly into Nmap for deep service versioning and script execution. This eliminates Nmap's scanning overhead while retaining its deep analysis capabilities.",
+        "The Two-Tier Reconnaissance Methodology: Enterprise red teams never run heavyweight Nmap scans across massive Class B (/16) subnets containing 65,536 IP addresses. Instead, they execute a two-tier strategy: Tier 1 uses Masscan or RustScan to rapidly identify which specific IP addresses have open ports across the entire range; Tier 2 parses the open IP:Port combinations and pipes them into Nmap (-sV -sC) and Httpx for deep, surgical inspection.",
       ],
       terminalCommands: [
         "sudo masscan 10.10.0.0/16 -p80,443,8080 --rate 2500 -oL masscan_results.txt",
@@ -278,10 +281,11 @@ export const chapter4: RoadmapChapter = {
         }
       ],
       keyTopics: [
-        "Concurrent HTTP/HTTPS probing with ProjectDiscovery's `httpx`",
-        "Technology stack fingerprinting and web server classification (`-tech-detect`)",
-        "Response body hashing (`-hash`) to filter out generic 404 and placeholder pages",
-        "Identifying cloud CDN infrastructure and CNAME configurations",
+        "Concurrent HTTP Probing Architecture with Httpx: Subdomain enumeration tools only output lists of DNS hostnames; they do not verify whether an active web service is responding. ProjectDiscovery's Httpx takes tens of thousands of discovered hostnames and executes concurrent HTTP/HTTPS requests over pooled connections to determine live endpoints. Httpx automatically handles protocol fallback (testing port 80 and port 443 simultaneously) and follows redirect chains cleanly.",
+        "Technology Stack Fingerprinting & Header Detection (-tech-detect): Httpx analyzes HTTP response headers, cookies, and DOM structural patterns to automatically detect running technologies via the Wappalyzer signature database. Passing '-tech-detect' identifies web frameworks (Django, Spring Boot, React, Laravel), content management systems (WordPress, Drupal), and reverse proxies (Nginx, Envoy, Cloudflare). This allows researchers to quickly isolate high-value technology stacks.",
+        "Response Body Hashing (-hash) for Noise Elimination: When probing 50,000 subdomains, thousands of dead or unconfigured domains return identical generic placeholder pages, default web server screens, or soft-404 errors. Httpx calculates the cryptographic SHA-256 and Simhash of the response body (-hash), tagging every response with its hash value. Analysts filter out repeating hashes, reducing thousands of redundant responses down to a unique list of distinct web applications.",
+        "CDN & WAF Edge Identification (-cdn): The '-cdn' flag in Httpx queries IP ranges and response headers to identify whether a subdomain is routed through a Content Delivery Network (Cloudflare, Akamai, Fastly, AWS CloudFront). Identifying non-CDN assets is critical during penetration testing; non-CDN subdomains route directly to the target's origin hosting servers where rate-limiting, WAF inspection, and DDoS protections do not exist.",
+        "CNAME Extraction & Subdomain Takeover Detection: Httpx extracts DNS Canonical Name (CNAME) records during HTTP probing (-cname). If a subdomain's CNAME points to an external cloud service (such as an AWS S3 bucket, GitHub Pages, or Zendesk helpdesk) that returns an HTTP 404 error, a Subdomain Takeover vulnerability exists. An attacker can register the abandoned bucket or third-party service name to take full control of the corporate subdomain.",
       ],
       terminalCommands: [
         "cat subdomains.txt | httpx -title -status-code -tech-detect -o live_sites.txt",
@@ -355,10 +359,11 @@ PARAMETER DISCOVERY SYNTAX:
         }
       ],
       keyTopics: [
-        "Directory and file discovery using ffuf and SecLists wordlists",
-        "Filtering false positives using `-fc`, `-fs`, `-fw`, and auto-calibration (`-ac`)",
-        "Virtual Host (VHost) brute-forcing to bypass reverse proxies",
-        "Parameter fuzzing and POST body fuzzing with custom headers",
+        "Web Application Fuzzing Mechanics & The FUZZ Keyword: Fuzzing is the automated submission of systematically altered input data to discover hidden resources and software errors. In ffuf (Fuzz Faster U Fool), the keyword 'FUZZ' acts as a placeholder replaced by words from your dictionary across any part of the request: the URI path, query parameters, headers, or POST body. Written in Go, ffuf leverages lightweight goroutines to send thousands of HTTP requests per second across multi-core systems.",
+        "Response Calibration & Anomaly Filtering (-fc, -fs, -fw, -fl): The greatest challenge in web fuzzing is filtering out false positive responses generated when a web server returns HTTP 200 for every non-existent URL. The flag -fc filters specific HTTP status codes (e.g. -fc 404,500); -fs filters responses matching exact byte sizes; -fw filters by word count; -fl filters by line count. Using auto-calibration (-ac) instructs ffuf to automatically analyze server behavior and filter baseline noise.",
+        "Recursive Directory Discovery (-recursion & -recursion-depth): When fuzzing a web application, discovering a directory (such as /admin returning HTTP 301) only uncovers the first level of the hierarchy. Enabling recursive fuzzing (-recursion -recursion-depth 2) instructs ffuf to automatically spawn a child fuzzing task inside every discovered folder (/admin/FUZZ). This systematically maps out nested administrative hierarchies and hidden API version paths.",
+        "Virtual Host (VHost) Brute-Forcing for Internal Routing: Modern web servers host dozens of different websites on a single public IP address, routing traffic based on the HTTP 'Host:' header. By keeping the IP constant and fuzzing the Host header (ffuf -H 'Host: FUZZ.target.com'), researchers uncover internal developer portals (e.g. dev.target.com, staging.target.com) that lack public DNS records. Filtering by response size (-fs) isolates unique internal virtual hosts from the default fallback website.",
+        "Parameter Fuzzing & Hidden Functionality Discovery: Fuzzing query parameters (https://target.com/index.php?FUZZ=test) using SecLists parameter dictionaries uncovers hidden administrative and debugging triggers. Developers frequently leave backdoor parameters (like ?debug=true, ?admin=1, or ?view=) in production code to bypass authentication or view verbose error traces. Discovering these hidden parameters unlocks critical injection attack vectors.",
       ],
       terminalCommands: [
         "ffuf -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt -u https://target.com/FUZZ -mc 200,301,302,403 -fs 1240",
@@ -430,10 +435,11 @@ PARAMETER DISCOVERY SYNTAX:
         }
       ],
       keyTopics: [
-        "Nuclei YAML template syntax: requests, matchers, extractors, and conditions",
-        "Filtering templates by severity (`critical`, `high`) and tags (`cve`, `exposure`)",
-        "Out-of-band (OOB) vulnerability detection using Interactsh",
-        "Writing custom Nuclei templates for proprietary vulnerability verification",
+        "Nuclei Declarative YAML Template Architecture: ProjectDiscovery's Nuclei is a lightning-fast, community-driven vulnerability scanner powered by human-readable YAML templates. Unlike legacy opaque scanners, Nuclei templates clearly define the exact HTTP/TCP requests to send, the payload parameters to inject, and the precise conditions (matchers) required to confirm vulnerability. This declarative architecture makes vulnerability scanning transparent, reproducible, and easily customizable.",
+        "Advanced Matcher Logic & Condition Chains: Nuclei matchers inspect HTTP response status codes, response headers, response bodies, and cryptographic hashes using string matching, regular expressions, and DSL expressions. Matchers can be combined using boolean logic (condition: and / condition: or) to virtually eliminate false positives. For example, a template verifying an exposed Git config requires both a status code of 200 AND the exact string '[core]' inside the response body.",
+        "Surgical Vulnerability Scanning & Severity Tagging: Nuclei organizes thousands of community templates into categorized tags: 'cve' (published CVEs), 'exposure' (exposed configs and API keys), 'misconfig' (security misconfigurations), and 'takeover' (subdomain takeovers). Analysts filter scans by severity (-severity critical,high) and tags (-tags cve,exposure), focusing execution strictly on high-payout, actionable vulnerabilities without sending thousands of irrelevant checks.",
+        "Out-of-Band (OAST) Integration via Interactsh: Many critical vulnerabilities (like Log4Shell, blind Server-Side Request Forgery, and blind OS command injection) generate zero visible output in HTTP responses. Nuclei integrates natively with the Interactsh out-of-band listener platform (-interactsh). When a payload triggers, the target server initiates a DNS or HTTP interaction back to Interactsh, allowing Nuclei to conclusively confirm blind vulnerabilities.",
+        "Custom Template Development for 0-Day & Proprietary Checks: Security researchers write custom Nuclei templates to operationalize newly published proof-of-concept exploits across thousands of client assets in minutes. A custom template specifies the target endpoint path, HTTP method, attack headers, and regex extractors that parse sensitive tokens from responses. Sharing and running custom templates gives researchers a decisive speed advantage during initial vulnerability disclosure windows.",
       ],
       terminalCommands: [
         "nuclei -update-templates",
