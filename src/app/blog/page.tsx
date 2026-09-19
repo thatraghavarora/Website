@@ -1,19 +1,61 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Search, Clock, Calendar, Bookmark, Tag } from "lucide-react";
-import { blogPosts } from "@/data/siteData";
+import { blogPosts, BlogPost } from "@/data/siteData";
 import { SquiggleDoodle } from "@/components/Doodles";
 
+const ACCENTS = ["bg-yellow-200", "bg-rose-200", "bg-blue-200", "bg-emerald-200", "bg-purple-200"];
+
 export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>(blogPosts);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const categories = ["All", "Cybersecurity", "Bug Bounty", "Development", "Learning", "Career"];
+  useEffect(() => {
+    fetch("/api/blogs")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.blogs && Array.isArray(data.blogs)) {
+          const apiBlogs: BlogPost[] = data.blogs.map((b: any, idx: number) => ({
+            slug: b.slug,
+            title: b.title,
+            excerpt: b.excerpt,
+            content: b.content,
+            category: (b.category as any) || "Cybersecurity",
+            tags: Array.isArray(b.tags) ? b.tags : ["Security"],
+            readTime: b.read_time || "5 min read",
+            date: new Date(b.created_at || Date.now()).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            author: {
+              name: b.author_name || "Raghav Arora",
+              avatar: b.author_avatar || "/images/hero-avatar.jpg",
+              role: "Security Researcher",
+            },
+            accentColor: ACCENTS[idx % ACCENTS.length],
+          }));
 
-  const filteredPosts = blogPosts.filter((post) => {
+          // Deduplicate by slug
+          const combined = [...apiBlogs];
+          blogPosts.forEach((bp) => {
+            if (!combined.some((c) => c.slug === bp.slug)) {
+              combined.push(bp);
+            }
+          });
+          setPosts(combined);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const categories = ["All", "Cybersecurity", "Bug Bounty", "Tools & Automation", "Development", "Learning", "Career"];
+
+  const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       selectedCategory === "All" || post.category === selectedCategory;
 

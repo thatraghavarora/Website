@@ -27,11 +27,27 @@ import {
   Activity,
   UserCheck,
   Shield,
-  Map
+  Map,
+  BookOpen,
+  MessageSquare,
+  ThumbsUp,
+  Copy,
+  Eye,
+  Clock,
+  Sparkles
 } from "lucide-react";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 
-type TabType = "overview" | "inquiries" | "purchases" | "users" | "validation" | "roadmap";
+type TabType =
+  | "overview"
+  | "purchases"
+  | "progress"
+  | "blogs"
+  | "community"
+  | "roadmap"
+  | "inquiries"
+  | "users"
+  | "validation";
 
 interface InquiryItem {
   id: string;
@@ -54,8 +70,54 @@ interface PurchaseItem {
   amount: string;
   payment_method: string;
   transaction_id: string;
+  utr_number?: string;
+  verification_status?: "verified" | "pending_verification" | "rejected";
+  enrolled_at?: string;
+  verified_at?: string | null;
   status: "active" | "pending" | "expired" | "refunded";
   created_at: string;
+}
+
+interface BlogItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags?: string[];
+  cover_image?: string;
+  read_time?: string;
+  views_count?: number;
+  is_published?: boolean;
+  created_at: string;
+}
+
+interface CommunityPostItem {
+  id: string;
+  author: string;
+  role?: string;
+  category: string;
+  title: string;
+  content: string;
+  likes?: number;
+  time?: string;
+  created_at?: string;
+  comments?: Array<{ id: string; author: string; content: string; time?: string }>;
+}
+
+interface ProgressItem {
+  id: string;
+  user_email: string;
+  item_title: string;
+  item_type: string;
+  item_slug: string;
+  progress_percent: number;
+  completed_count: number;
+  total_count: number;
+  enrolled_at: string;
+  last_activity: string;
+  status: "in_progress" | "completed";
 }
 
 interface UserItem {
@@ -90,6 +152,9 @@ export default function AdminPage() {
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
   const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [communityPosts, setCommunityPosts] = useState<CommunityPostItem[]>([]);
+  const [progressList, setProgressList] = useState<ProgressItem[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -113,6 +178,20 @@ export default function AdminPage() {
   });
   const [grantSubmitting, setGrantSubmitting] = useState(false);
   const [grantValidationErrors, setGrantValidationErrors] = useState<string[]>([]);
+
+  // Blog Publishing Modal State
+  const [showCreateBlogModal, setShowCreateBlogModal] = useState(false);
+  const [newBlogData, setNewBlogData] = useState({
+    title: "",
+    slug: "",
+    category: "Cybersecurity",
+    excerpt: "",
+    content: "",
+    tags: "Bug Bounty, Web Security, Tutorial",
+    coverImage: "/images/hero-avatar.jpg",
+  });
+  const [blogSubmitting, setBlogSubmitting] = useState(false);
+  const [blogErrors, setBlogErrors] = useState<string[]>([]);
 
   // Validation Test Playground
   const [testPayload, setTestPayload] = useState({
@@ -173,6 +252,27 @@ export default function AdminPage() {
       if (userRes.ok) {
         const u = await userRes.json();
         setUsers(u.users || []);
+      }
+
+      // 5. Blogs
+      const blogRes = await fetch("/api/blogs");
+      if (blogRes.ok) {
+        const b = await blogRes.json();
+        setBlogs(b.blogs || []);
+      }
+
+      // 6. Community Posts
+      const commRes = await fetch("/api/community");
+      if (commRes.ok) {
+        const c = await commRes.json();
+        setCommunityPosts(c.posts || []);
+      }
+
+      // 7. Student Progress
+      const progRes = await fetch("/api/admin/progress");
+      if (progRes.ok) {
+        const pr = await progRes.json();
+        setProgressList(pr.progressList || []);
       }
     } catch (err) {
       console.error("Failed to load admin data:", err);
@@ -281,6 +381,94 @@ export default function AdminPage() {
       }
     } catch {
       setStatusMessage({ text: "Error updating purchase status.", type: "error" });
+    }
+  };
+
+  // Verify Payment UTR
+  const handleVerifyUtr = async (id: string) => {
+    try {
+      const res = await fetch("/api/admin/purchases", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, verificationStatus: "verified" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatusMessage({ text: data.error || "Server rejected UTR verification.", type: "error" });
+      } else {
+        setStatusMessage({ text: "Payment UTR verified & student access activated successfully!", type: "success" });
+        setPurchases((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  verification_status: "verified",
+                  status: "active",
+                  verified_at: new Date().toISOString(),
+                }
+              : item
+          )
+        );
+      }
+    } catch {
+      setStatusMessage({ text: "Error sending verification request.", type: "error" });
+    }
+  };
+
+  // Blog Publishing Handler
+  const handleCreateBlogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBlogSubmitting(true);
+    setBlogErrors([]);
+
+    const slug =
+      newBlogData.slug.trim() ||
+      newBlogData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+    const tagsArray = newBlogData.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    try {
+      const res = await fetch("/api/blogs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newBlogData.title,
+          slug,
+          category: newBlogData.category,
+          excerpt: newBlogData.excerpt,
+          content: newBlogData.content,
+          tags: tagsArray,
+          coverImage: newBlogData.coverImage,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setBlogErrors(data.errors || [data.error || "Failed to publish blog."]);
+      } else {
+        setShowCreateBlogModal(false);
+        setStatusMessage({ text: "Blog article published successfully!", type: "success" });
+        setNewBlogData({
+          title: "",
+          slug: "",
+          category: "Cybersecurity",
+          excerpt: "",
+          content: "",
+          tags: "Bug Bounty, Web Security, Tutorial",
+          coverImage: "/images/hero-avatar.jpg",
+        });
+        loadDashboardData();
+      }
+    } catch {
+      setBlogErrors(["Failed to reach blog publishing service."]);
+    } finally {
+      setBlogSubmitting(false);
     }
   };
 
@@ -551,9 +739,12 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
             { id: "overview", label: "Overview & Metrics", icon: Activity },
-            { id: "roadmap", label: "Paid Roadmap (Deep Curriculum)", icon: Map },
+            { id: "purchases", label: `Purchases & UTRs (${purchases.length})`, icon: ShoppingBag },
+            { id: "progress", label: `Student Progress (${progressList.length})`, icon: ShieldCheck },
+            { id: "blogs", label: `Blogs & Articles (${blogs.length})`, icon: BookOpen },
+            { id: "community", label: `Community (${communityPosts.length})`, icon: MessageSquare },
+            { id: "roadmap", label: "Paid Roadmap Curriculum", icon: Map },
             { id: "inquiries", label: `Hire Me Leads (${inquiries.length})`, icon: Mail },
-            { id: "purchases", label: `Roadmap Purchases (${purchases.length})`, icon: ShoppingBag },
             { id: "users", label: `Users & Roles (${users.length})`, icon: Users },
             { id: "validation", label: "Server Validation Suite", icon: Shield },
           ].map((tab) => {
@@ -968,6 +1159,8 @@ export default function AdminPage() {
                   <option value="all">All Statuses</option>
                   <option value="active">Active</option>
                   <option value="pending">Pending</option>
+                  <option value="verified">Verified UTR</option>
+                  <option value="pending_verification">Pending UTR</option>
                   <option value="refunded">Refunded</option>
                   <option value="expired">Expired</option>
                 </select>
@@ -982,64 +1175,372 @@ export default function AdminPage() {
                     <th className="p-3.5">Student Email</th>
                     <th className="p-3.5">Item Unlocked</th>
                     <th className="p-3.5">Amount</th>
-                    <th className="p-3.5">Method</th>
-                    <th className="p-3.5">Transaction ID</th>
-                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Enrolled Date &amp; Time</th>
+                    <th className="p-3.5">UPI UTR / Ref No.</th>
+                    <th className="p-3.5">Verification</th>
+                    <th className="p-3.5">Access Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-neutral-200 font-bold text-neutral-800">
                   {purchases.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-neutral-500 font-bold">
+                      <td colSpan={7} className="p-8 text-center text-neutral-500 font-bold">
                         No purchases found.
                       </td>
                     </tr>
                   ) : (
-                    purchases.map((purchase) => (
-                      <tr key={purchase.id} className="hover:bg-neutral-50 transition-colors">
+                    purchases.map((purchase) => {
+                      const isVerified = purchase.verification_status === "verified";
+                      const enrollmentDate = purchase.enrolled_at || purchase.created_at;
+                      const formattedDate = new Date(enrollmentDate).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                      return (
+                        <tr key={purchase.id} className="hover:bg-neutral-50 transition-colors">
+                          <td className="p-3.5 font-mono text-black font-bold">
+                            {purchase.user_email}
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-black text-black">{purchase.item_title}</div>
+                            <span className="text-[10px] font-mono text-neutral-500 uppercase">
+                              {purchase.item_type || "item"} · {purchase.item_slug}
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-black text-emerald-700">
+                            {purchase.amount || "99 RS"}
+                          </td>
+                          <td className="p-3.5 whitespace-nowrap text-neutral-600 font-mono text-[11px]">
+                            {formattedDate}
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs font-black bg-yellow-100 px-2 py-0.5 rounded border border-yellow-400 text-neutral-900 select-all">
+                                {purchase.utr_number || purchase.transaction_id}
+                              </span>
+                            </div>
+                            <span className="text-[9px] text-neutral-400 font-mono">
+                              via {purchase.payment_method.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="p-3.5">
+                            {isVerified ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-400 font-black text-[10px] uppercase">
+                                <Check className="w-3 h-3 text-emerald-700 stroke-[3]" />
+                                Verified
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-400 font-black text-[10px] uppercase">
+                                  <Clock className="w-3 h-3 text-amber-700 stroke-[2.5]" />
+                                  Pending
+                                </span>
+                                <button
+                                  onClick={() => handleVerifyUtr(purchase.id)}
+                                  className="px-2.5 py-1 rounded-lg border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-[10px] uppercase tracking-wider shadow-brutal-xs cursor-pointer"
+                                  title="Approve UTR & Unlock Access"
+                                >
+                                  Verify UTR
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <select
+                              value={purchase.status}
+                              onChange={(e) => handleUpdatePurchaseStatus(purchase.id, e.target.value)}
+                              className={`px-2.5 py-1 rounded-lg border-2 border-black text-[11px] font-black uppercase focus:outline-none ${
+                                purchase.status === "active"
+                                  ? "bg-emerald-300 text-black"
+                                  : purchase.status === "refunded"
+                                  ? "bg-red-200 text-red-900"
+                                  : "bg-neutral-200 text-neutral-800"
+                              }`}
+                            >
+                              <option value="active">Active</option>
+                              <option value="pending">Pending</option>
+                              <option value="refunded">Refunded</option>
+                              <option value="expired">Expired</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* TAB: STUDENT PROGRESS TRACKING                                */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {activeTab === "progress" && (
+          <div className="rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-8 shadow-brutal space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-black font-display">
+                  Student Learning &amp; Course Progress
+                </h2>
+                <p className="text-xs font-bold text-neutral-600 mt-0.5">
+                  Live course &amp; roadmap milestone completions with enrollment date, timestamp &amp; checklist stats.
+                </p>
+              </div>
+              <button
+                onClick={loadDashboardData}
+                className="btn-brutal btn-brutal-primary px-4 py-2 text-xs uppercase font-black flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? "animate-spin" : ""}`} />
+                <span>Sync DB Progress</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border-2 border-black">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-emerald-200 border-b-2 border-black text-black uppercase font-black tracking-wider text-[11px]">
+                    <th className="p-3.5">Student Email</th>
+                    <th className="p-3.5">Enrolled Course / Roadmap</th>
+                    <th className="p-3.5">Progress (%)</th>
+                    <th className="p-3.5">Checklist Completed</th>
+                    <th className="p-3.5">Enrolled At</th>
+                    <th className="p-3.5">Last Activity</th>
+                    <th className="p-3.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y-2 divide-neutral-200 font-bold text-neutral-800">
+                  {progressList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-neutral-500 font-bold">
+                        No progress records found.
+                      </td>
+                    </tr>
+                  ) : (
+                    progressList.map((prog) => (
+                      <tr key={prog.id} className="hover:bg-neutral-50 transition-colors">
                         <td className="p-3.5 font-mono text-black font-bold">
-                          {purchase.user_email}
+                          {prog.user_email}
                         </td>
                         <td className="p-3.5">
-                          <div className="font-black text-black">{purchase.item_title}</div>
+                          <div className="font-black text-black capitalize">{prog.item_title.replace(/-/g, " ")}</div>
                           <span className="text-[10px] font-mono text-neutral-500 uppercase">
-                            Slug: {purchase.item_slug}
+                            Type: {prog.item_type}
                           </span>
                         </td>
-                        <td className="p-3.5 font-black text-emerald-700">
-                          {purchase.amount || "99 RS"}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-neutral-200 rounded-full h-2.5 overflow-hidden border border-neutral-400">
+                              <div
+                                className="bg-emerald-500 h-2.5 rounded-full"
+                                style={{ width: `${Math.min(100, prog.progress_percent)}%` }}
+                              />
+                            </div>
+                            <span className="font-black font-mono text-xs">{prog.progress_percent.toFixed(0)}%</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5 font-mono text-neutral-700">
+                          {prog.completed_count} / {prog.total_count} items
+                        </td>
+                        <td className="p-3.5 font-mono text-[11px] text-neutral-600 whitespace-nowrap">
+                          {new Date(prog.enrolled_at).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="p-3.5 font-mono text-[11px] text-neutral-500 whitespace-nowrap">
+                          {new Date(prog.last_activity).toLocaleString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </td>
                         <td className="p-3.5">
-                          <span className="px-2 py-0.5 rounded bg-neutral-100 border border-neutral-300 uppercase font-mono text-[10px]">
-                            {purchase.payment_method}
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-mono text-[11px] text-neutral-600">
-                          {purchase.transaction_id}
-                        </td>
-                        <td className="p-3.5">
-                          <select
-                            value={purchase.status}
-                            onChange={(e) => handleUpdatePurchaseStatus(purchase.id, e.target.value)}
-                            className={`px-2.5 py-1 rounded-lg border-2 border-black text-[11px] font-black uppercase focus:outline-none ${
-                              purchase.status === "active"
-                                ? "bg-emerald-300 text-black"
-                                : purchase.status === "refunded"
-                                ? "bg-red-200 text-red-900"
-                                : "bg-neutral-200 text-neutral-800"
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full border text-[10px] font-black uppercase ${
+                              prog.status === "completed"
+                                ? "bg-emerald-100 text-emerald-900 border-emerald-400"
+                                : "bg-amber-100 text-amber-900 border-amber-400"
                             }`}
                           >
-                            <option value="active">Active</option>
-                            <option value="pending">Pending</option>
-                            <option value="refunded">Refunded</option>
-                            <option value="expired">Expired</option>
-                          </select>
+                            {prog.status === "completed" ? "Completed" : "In Progress"}
+                          </span>
                         </td>
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* TAB: BLOGS & ARTICLES MANAGEMENT                              */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {activeTab === "blogs" && (
+          <div className="rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-8 shadow-brutal space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-black font-display">
+                  Blogs &amp; Technical Writeups
+                </h2>
+                <p className="text-xs font-bold text-neutral-600 mt-0.5">
+                  Publish and manage technical articles, bug bounty methodology guides, and security tutorials.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowCreateBlogModal(true)}
+                className="btn-brutal btn-brutal-primary px-4 py-2.5 text-xs uppercase font-black flex items-center gap-1.5"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Publish New Blog</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border-2 border-black">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-yellow-200 border-b-2 border-black text-black uppercase font-black tracking-wider text-[11px]">
+                    <th className="p-3.5">Article Title</th>
+                    <th className="p-3.5">Slug</th>
+                    <th className="p-3.5">Category</th>
+                    <th className="p-3.5">Estimated Read</th>
+                    <th className="p-3.5">Published Date</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y-2 divide-neutral-200 font-bold text-neutral-800">
+                  {blogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-neutral-500 font-bold">
+                        No blogs published yet. Click &quot;Publish New Blog&quot; to write your first writeup!
+                      </td>
+                    </tr>
+                  ) : (
+                    blogs.map((b) => (
+                      <tr key={b.id} className="hover:bg-neutral-50 transition-colors">
+                        <td className="p-3.5 font-black text-black max-w-xs">
+                          <div className="truncate">{b.title}</div>
+                          <div className="text-[10px] text-neutral-500 font-medium truncate">{b.excerpt}</div>
+                        </td>
+                        <td className="p-3.5 font-mono text-[11px] text-neutral-600">
+                          {b.slug}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-0.5 rounded-full border border-black bg-neutral-100 text-black text-[10px] font-black uppercase">
+                            {b.category}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-neutral-600 font-mono">
+                          {b.read_time || "5 min read"}
+                        </td>
+                        <td className="p-3.5 text-neutral-500 whitespace-nowrap">
+                          {new Date(b.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-400 font-black text-[10px] uppercase">
+                            Live Published
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right whitespace-nowrap">
+                          <Link
+                            href={`/blog/${b.slug}`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-black bg-white hover:bg-black hover:text-white transition-colors text-[11px] font-black uppercase"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>View</span>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* TAB: COMMUNITY POSTS & MODERATION                             */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {activeTab === "community" && (
+          <div className="rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-8 shadow-brutal space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-black font-display">
+                  Community Student Forum
+                </h2>
+                <p className="text-xs font-bold text-neutral-600 mt-0.5">
+                  View and moderate discussions, Hall of Fame reports, and student bug bounty doubts.
+                </p>
+              </div>
+              <button
+                onClick={loadDashboardData}
+                className="btn-brutal btn-brutal-primary px-4 py-2 text-xs uppercase font-black flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? "animate-spin" : ""}`} />
+                <span>Refresh Posts</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {communityPosts.length === 0 ? (
+                <div className="col-span-2 p-8 text-center text-neutral-500 font-bold border-2 border-dashed border-neutral-300 rounded-2xl">
+                  No community posts found.
+                </div>
+              ) : (
+                communityPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="p-5 rounded-2xl border-2 border-black bg-neutral-50 shadow-brutal-xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="px-2.5 py-0.5 rounded-full border border-black bg-purple-200 text-purple-900 text-[10px] font-black uppercase">
+                          {post.category}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 font-medium">
+                          {post.time || (post.created_at ? new Date(post.created_at).toLocaleDateString() : "")}
+                        </span>
+                      </div>
+                      <h4 className="font-black text-black text-sm mb-1">{post.title}</h4>
+                      <p className="text-xs font-bold text-neutral-700 line-clamp-3 mb-3">
+                        {post.content}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-neutral-200 text-[11px] font-bold text-neutral-600">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-yellow-300 border border-black flex items-center justify-center text-[10px] font-black text-black">
+                          {post.author.charAt(0)}
+                        </span>
+                        <span className="text-black font-black">{post.author}</span>
+                        {post.role && <span className="text-neutral-400">· {post.role}</span>}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp className="w-3 h-3 text-neutral-500" />
+                          {post.likes || 0}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3 text-neutral-500" />
+                          {post.comments ? post.comments.length : 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -1463,6 +1964,164 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => setShowGrantModal(false)}
                   className="btn-brutal btn-brutal-outline text-xs uppercase font-black py-2.5 px-4"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL 3: CREATE & PUBLISH BLOG ════════════════════════════ */}
+      {showCreateBlogModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border-[3.5px] border-black p-6 sm:p-8 max-w-2xl w-full shadow-brutal-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-6 h-6 text-amber-500" />
+                <h3 className="text-xl font-black text-black font-display">
+                  Publish New Blog Writeup
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCreateBlogModal(false)}
+                className="w-8 h-8 rounded-xl border-2 border-black flex items-center justify-center font-black text-sm hover:bg-black hover:text-white transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-600 font-bold">
+              Writeups are immediately published to the public blog and persisted in the database.
+            </p>
+
+            {blogErrors.length > 0 && (
+              <div className="p-3.5 rounded-xl border-2 border-red-500 bg-red-50 text-red-700 text-xs font-bold space-y-1">
+                {blogErrors.map((err, i) => (
+                  <p key={i}>• {err}</p>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateBlogSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-black uppercase text-black mb-1">
+                  Article Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newBlogData.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                    setNewBlogData({ ...newBlogData, title, slug: autoSlug });
+                  }}
+                  placeholder="e.g. How I Discovered an IDOR Exposing 50,000 Accounts"
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black bg-neutral-50 font-bold focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-black uppercase text-black mb-1">
+                    URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={newBlogData.slug}
+                    onChange={(e) => setNewBlogData({ ...newBlogData, slug: e.target.value })}
+                    placeholder="how-i-found-idor-bug"
+                    required
+                    className="w-full px-3 py-2 rounded-xl border-2 border-black bg-neutral-50 font-mono text-xs font-bold focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-black uppercase text-black mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newBlogData.category}
+                    onChange={(e) => setNewBlogData({ ...newBlogData, category: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border-2 border-black bg-neutral-50 font-bold focus:bg-white focus:outline-none"
+                  >
+                    <option value="Cybersecurity">Cybersecurity</option>
+                    <option value="Bug Bounty">Bug Bounty</option>
+                    <option value="Tools & Automation">Tools &amp; Automation</option>
+                    <option value="Web Pentesting">Web Pentesting</option>
+                    <option value="Career & Learning">Career &amp; Learning</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-black uppercase text-black mb-1">
+                  Tags (Comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={newBlogData.tags}
+                  onChange={(e) => setNewBlogData({ ...newBlogData, tags: e.target.value })}
+                  placeholder="Bug Bounty, IDOR, Burp Suite, Recon"
+                  className="w-full px-3 py-2 rounded-xl border-2 border-black bg-neutral-50 font-bold focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black uppercase text-black mb-1">
+                  Cover Image URL
+                </label>
+                <input
+                  type="text"
+                  value={newBlogData.coverImage}
+                  onChange={(e) => setNewBlogData({ ...newBlogData, coverImage: e.target.value })}
+                  placeholder="/images/hero-hacker.jpg"
+                  className="w-full px-3 py-2 rounded-xl border-2 border-black bg-neutral-50 font-mono text-xs font-bold focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black uppercase text-black mb-1">
+                  Summary / Excerpt <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={newBlogData.excerpt}
+                  onChange={(e) => setNewBlogData({ ...newBlogData, excerpt: e.target.value })}
+                  placeholder="A short punchy preview description of this writeup..."
+                  required
+                  className="w-full px-3.5 py-2 rounded-xl border-2 border-black bg-neutral-50 font-bold focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black uppercase text-black mb-1">
+                  Article Content (Markdown supported) <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={6}
+                  value={newBlogData.content}
+                  onChange={(e) => setNewBlogData({ ...newBlogData, content: e.target.value })}
+                  placeholder="Write your technical writeup here with steps, methodology, tool commands and remediation tips..."
+                  required
+                  className="w-full px-3.5 py-2 rounded-xl border-2 border-black bg-neutral-50 font-mono text-xs font-medium focus:bg-white focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={blogSubmitting}
+                  className="btn-brutal btn-brutal-yellow text-xs uppercase font-black py-3 px-6 flex-1 text-center cursor-pointer shadow-brutal-sm"
+                >
+                  {blogSubmitting ? "Publishing..." : "Publish Article Live"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBlogModal(false)}
+                  className="btn-brutal btn-brutal-outline text-xs uppercase font-black py-3 px-4 cursor-pointer"
                 >
                   Cancel
                 </button>

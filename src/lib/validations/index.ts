@@ -160,6 +160,7 @@ export interface PurchaseInputValidationResult {
     amount: string;
     paymentMethod: PaymentMethod;
     transactionId: string;
+    utrNumber: string;
     userEmail: string;
   };
 }
@@ -195,8 +196,9 @@ export function validatePurchaseInput(body: unknown): PurchaseInputValidationRes
     ? (rawMethod as PaymentMethod)
     : "upi";
 
-  // Transaction ID
+  // Transaction ID / UTR Number
   const transactionId = sanitizeString(record.transactionId, 100) || `TXN-${Date.now()}`;
+  const utrNumber = sanitizeString(record.utrNumber, 50) || transactionId;
 
   // User Email (optional in request if retrieved from session, but validated if passed)
   let userEmail = "guest@thatraghavarora.in";
@@ -223,10 +225,76 @@ export function validatePurchaseInput(body: unknown): PurchaseInputValidationRes
       amount,
       paymentMethod,
       transactionId,
+      utrNumber,
       userEmail,
     },
   };
 }
+
+// ─── BLOG VALIDATION ──────────────────────────────────────────────
+export interface BlogInputValidationResult {
+  valid: boolean;
+  errors: string[];
+  data?: {
+    title: string;
+    slug: string;
+    excerpt: string;
+    content: string;
+    category: string;
+    tags: string[];
+    coverImage?: string;
+  };
+}
+
+export function validateBlogInput(body: unknown): BlogInputValidationResult {
+  const errors: string[] = [];
+  if (!body || typeof body !== "object") {
+    return { valid: false, errors: ["Request body must be a valid JSON object."] };
+  }
+
+  const record = body as Record<string, unknown>;
+  const title = sanitizeString(record.title, 250);
+  if (!title || title.length < 3) {
+    errors.push("Blog title is required and must be at least 3 characters.");
+  }
+
+  const rawSlug = sanitizeString(record.slug, 200) || title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const slug = rawSlug.replace(/^-+|-+$/g, "");
+
+  const excerpt = sanitizeString(record.excerpt, 500) || "";
+  const content = typeof record.content === "string" ? record.content.trim() : "";
+  if (!content || content.length < 10) {
+    errors.push("Blog content is required (minimum 10 characters).");
+  }
+
+  const category = sanitizeString(record.category, 100) || "Cyber Security";
+  const tags = Array.isArray(record.tags)
+    ? record.tags.map((t) => sanitizeString(t, 50)).filter(Boolean)
+    : ["Web Pentesting"];
+
+  const coverImage = sanitizeString(record.coverImage, 500) || "/images/hero-avatar.jpg";
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    errors: [],
+    data: {
+      title,
+      slug,
+      excerpt,
+      content,
+      category,
+      tags,
+      coverImage,
+    },
+  };
+}
+
+export const VALID_VERIFICATION_STATUSES = ["verified", "pending_verification", "rejected"] as const;
+export type VerificationStatus = (typeof VALID_VERIFICATION_STATUSES)[number];
 
 export function validatePurchaseStatusUpdate(status: unknown): { valid: boolean; error?: string; status?: PurchaseStatus } {
   if (typeof status !== "string" || !VALID_PURCHASE_STATUSES.includes(status as PurchaseStatus)) {
@@ -236,6 +304,16 @@ export function validatePurchaseStatusUpdate(status: unknown): { valid: boolean;
     };
   }
   return { valid: true, status: status as PurchaseStatus };
+}
+
+export function validateVerificationStatusUpdate(status: unknown): { valid: boolean; error?: string; status?: VerificationStatus } {
+  if (typeof status !== "string" || !VALID_VERIFICATION_STATUSES.includes(status as VerificationStatus)) {
+    return {
+      valid: false,
+      error: `Invalid verification status. Must be one of: ${VALID_VERIFICATION_STATUSES.join(", ")}`,
+    };
+  }
+  return { valid: true, status: status as VerificationStatus };
 }
 
 // ---------------------------------------------------------------------------

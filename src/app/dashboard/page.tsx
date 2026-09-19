@@ -263,10 +263,16 @@ function CoursePurchaseModal({
 }: {
   course: Course;
   onClose: () => void;
-  onUnlockSuccess: () => void;
+  onUnlockSuccess: (utr?: string, email?: string) => void;
 }) {
+  const [utrInput, setUtrInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const priceDisplay =
     typeof course.price === "number" ? `₹${course.price} INR` : `${course.price}`;
+
+  const handleConfirm = () => {
+    onUnlockSuccess(utrInput.trim(), emailInput.trim());
+  };
 
   return (
     <div
@@ -287,10 +293,10 @@ function CoursePurchaseModal({
             Unlock Full Course Access
           </h3>
         </div>
-        <p className="text-xs font-bold text-neutral-600 mb-5">{course.title}</p>
+        <p className="text-xs font-bold text-neutral-600 mb-4">{course.title}</p>
 
         {/* Price Card */}
-        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-5 shadow-brutal-xs">
+        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-4 shadow-brutal-xs">
           <p className="text-[11px] font-black uppercase tracking-wider text-black">
             Lifetime Enrollment
           </p>
@@ -310,10 +316,10 @@ function CoursePurchaseModal({
         </div>
 
         {/* Payment Options */}
-        <div className="space-y-3.5 mb-5">
-          <div className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50">
-            <p className="font-black text-xs text-black mb-1">Option 1 — UPI (Instant Pay)</p>
-            <p className="text-sm font-black font-mono text-purple-800 mb-1">
+        <div className="space-y-3 mb-4">
+          <div className="p-3 rounded-2xl border-2 border-black bg-neutral-50">
+            <p className="font-black text-xs text-black mb-0.5">Option 1 — UPI (Instant Pay)</p>
+            <p className="text-sm font-black font-mono text-purple-800 mb-0.5">
               connect@thatraghavarora.in
             </p>
             <p className="text-[10px] font-bold text-neutral-600">
@@ -321,8 +327,8 @@ function CoursePurchaseModal({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl border-2 border-black bg-blue-50">
-            <p className="font-black text-xs text-black mb-1">
+          <div className="p-3 rounded-2xl border-2 border-black bg-blue-50">
+            <p className="font-black text-xs text-black mb-0.5">
               Option 2 — PayPal (International)
             </p>
             <a
@@ -336,6 +342,45 @@ function CoursePurchaseModal({
           </div>
         </div>
 
+        {/* UTR & Student Verification Inputs */}
+        <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50 mb-4 space-y-3">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-black uppercase tracking-wider text-black">
+              Payment Verification Details
+            </span>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+              Student Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              placeholder="e.g. student@gmail.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-bold bg-white focus:outline-hidden focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+              12-Digit UPI UTR / Bank Reference No. <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 428910294821 (or demo ref)"
+              value={utrInput}
+              onChange={(e) => setUtrInput(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold bg-yellow-50 focus:outline-hidden focus:ring-2 focus:ring-black"
+            />
+            <p className="text-[10px] text-neutral-500 mt-1 font-medium">
+              Admin will verify this UTR reference to validate enrollment.
+            </p>
+          </div>
+        </div>
+
         <a
           href="https://instagram.com/thatraghavarora"
           target="_blank"
@@ -345,13 +390,10 @@ function CoursePurchaseModal({
           Send Payment Proof on Instagram DM
         </a>
 
-        <div className="pt-3 border-t-2 border-neutral-200">
-          <p className="text-[10px] text-center font-bold text-neutral-500 mb-2">
-            Paid or activating demo access?
-          </p>
+        <div className="pt-2 border-t-2 border-neutral-200">
           <button
-            onClick={onUnlockSuccess}
-            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5"
+            onClick={handleConfirm}
+            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>Confirm & Unlock Course Now</span>
@@ -370,8 +412,15 @@ function RoadmapPurchaseModal({
 }: {
   roadmap: RoadmapItem;
   onClose: () => void;
-  onUnlockSuccess: () => void;
+  onUnlockSuccess: (utr?: string, email?: string) => void;
 }) {
+  const [utrInput, setUtrInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+
+  const handleConfirm = () => {
+    onUnlockSuccess(utrInput.trim(), emailInput.trim());
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -391,10 +440,10 @@ function RoadmapPurchaseModal({
             Unlock Full Roadmap Access
           </h3>
         </div>
-        <p className="text-xs font-bold text-neutral-600 mb-5">{roadmap.title}</p>
+        <p className="text-xs font-bold text-neutral-600 mb-4">{roadmap.title}</p>
 
         {/* Price Card */}
-        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-5 shadow-brutal-xs">
+        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-4 shadow-brutal-xs">
           <p className="text-[11px] font-black uppercase tracking-wider text-black">
             Lifetime Roadmap Blueprint
           </p>
@@ -412,10 +461,10 @@ function RoadmapPurchaseModal({
         </div>
 
         {/* Payment Options */}
-        <div className="space-y-3.5 mb-5">
-          <div className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50">
-            <p className="font-black text-xs text-black mb-1">Option 1 — UPI (India: ₹99 INR)</p>
-            <p className="text-sm font-black font-mono text-purple-800 mb-1">
+        <div className="space-y-3 mb-4">
+          <div className="p-3 rounded-2xl border-2 border-black bg-neutral-50">
+            <p className="font-black text-xs text-black mb-0.5">Option 1 — UPI (India: ₹99 INR)</p>
+            <p className="text-sm font-black font-mono text-purple-800 mb-0.5">
               connect@thatraghavarora.in
             </p>
             <p className="text-[10px] font-bold text-neutral-600">
@@ -423,8 +472,8 @@ function RoadmapPurchaseModal({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl border-2 border-black bg-blue-50">
-            <p className="font-black text-xs text-black mb-1">
+          <div className="p-3 rounded-2xl border-2 border-black bg-blue-50">
+            <p className="font-black text-xs text-black mb-0.5">
               Option 2 — PayPal (International: $2 USD)
             </p>
             <a
@@ -438,6 +487,45 @@ function RoadmapPurchaseModal({
           </div>
         </div>
 
+        {/* UTR & Student Verification Inputs */}
+        <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50 mb-4 space-y-3">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-black uppercase tracking-wider text-black">
+              Payment Verification Details
+            </span>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+              Student Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              placeholder="e.g. student@gmail.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-bold bg-white focus:outline-hidden focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+              12-Digit UPI UTR / Bank Reference No. <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 428910294821 (or demo ref)"
+              value={utrInput}
+              onChange={(e) => setUtrInput(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold bg-yellow-50 focus:outline-hidden focus:ring-2 focus:ring-black"
+            />
+            <p className="text-[10px] text-neutral-500 mt-1 font-medium">
+              Admin will verify this UTR reference to validate enrollment.
+            </p>
+          </div>
+        </div>
+
         <a
           href="https://instagram.com/thatraghavarora"
           target="_blank"
@@ -447,13 +535,10 @@ function RoadmapPurchaseModal({
           Send Payment Proof on Instagram DM
         </a>
 
-        <div className="pt-3 border-t-2 border-neutral-200">
-          <p className="text-[10px] text-center font-bold text-neutral-500 mb-2">
-            Paid or activating demo access?
-          </p>
+        <div className="pt-2 border-t-2 border-neutral-200">
           <button
-            onClick={onUnlockSuccess}
-            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5"
+            onClick={handleConfirm}
+            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>Confirm & Unlock Roadmap Now</span>
@@ -2318,9 +2403,11 @@ export default function DashboardPage() {
     setPurchasingCourse(course);
   };
 
-  const handleUnlockCourseSuccess = async () => {
+  const handleUnlockCourseSuccess = async (utr?: string, email?: string) => {
     if (!purchasingCourse) return;
     const slug = purchasingCourse.slug;
+    const userEmail = email || "student@thatraghavarora.in";
+    const utrNumber = utr || `UTR-${Date.now()}`;
 
     // 1. Update State
     setPurchasedCourseSlugs((prev) => Array.from(new Set([...prev, slug])));
@@ -2343,8 +2430,10 @@ export default function DashboardPage() {
           itemType: "course",
           itemSlug: purchasingCourse.slug,
           itemTitle: purchasingCourse.title,
-          amount: purchasingCourse.price,
+          amount: typeof purchasingCourse.price === "number" ? `₹${purchasingCourse.price}` : purchasingCourse.price,
           paymentMethod: "upi",
+          utrNumber,
+          userEmail,
         }),
       });
     } catch {}
@@ -2355,9 +2444,11 @@ export default function DashboardPage() {
     setPurchasingRoadmap(roadmap);
   };
 
-  const handleUnlockRoadmapSuccess = async () => {
+  const handleUnlockRoadmapSuccess = async (utr?: string, email?: string) => {
     if (!purchasingRoadmap) return;
     const slug = purchasingRoadmap.slug;
+    const userEmail = email || "student@thatraghavarora.in";
+    const utrNumber = utr || `UTR-${Date.now()}`;
 
     // 1. Update State
     setPurchasedRoadmapSlugs((prev) => Array.from(new Set([...prev, slug])));
@@ -2382,6 +2473,8 @@ export default function DashboardPage() {
           itemTitle: purchasingRoadmap.title,
           amount: purchasingRoadmap.price,
           paymentMethod: "upi",
+          utrNumber,
+          userEmail,
         }),
       });
     } catch {}

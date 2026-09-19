@@ -3,7 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Calendar, User, Share2, Tag, ArrowRight } from "lucide-react";
-import { blogPosts } from "@/data/siteData";
+import { blogPosts, BlogPost } from "@/data/siteData";
+import {
+  createAdminSupabaseClient,
+  isSupabaseServerConfigured,
+} from "@/lib/supabase/server";
+
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
@@ -15,7 +21,36 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  let post: BlogPost | undefined = blogPosts.find((p) => p.slug === slug);
+
+  if (!post && isSupabaseServerConfigured()) {
+    try {
+      const admin = createAdminSupabaseClient();
+      const { data } = await admin.from("blogs").select("*").eq("slug", slug).single();
+      if (data) {
+        post = {
+          slug: data.slug,
+          title: data.title,
+          excerpt: data.excerpt,
+          content: data.content,
+          category: (data.category as any) || "Cybersecurity",
+          tags: Array.isArray(data.tags) ? data.tags : ["Security"],
+          readTime: data.read_time || "5 min read",
+          date: new Date(data.created_at || Date.now()).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          author: {
+            name: data.author_name || "Raghav Arora",
+            avatar: data.author_avatar || "/images/hero-avatar.jpg",
+            role: "Security Researcher",
+          },
+          accentColor: "bg-yellow-200",
+        };
+      }
+    } catch {}
+  }
 
   if (!post) {
     notFound();

@@ -126,8 +126,11 @@ export async function POST(request: Request) {
       amount,
       paymentMethod,
       transactionId,
+      utrNumber,
       userEmail,
     } = validation.data;
+
+    const enrolledAt = new Date().toISOString();
 
     if (!isSupabaseServerConfigured()) {
       const demoPurchase: LocalDemoPurchase = {
@@ -140,15 +143,20 @@ export async function POST(request: Request) {
         payment_method: paymentMethod,
         transaction_id: transactionId,
         status: "active",
-        created_at: new Date().toISOString(),
+        created_at: enrolledAt,
       };
       localDemoPurchases.unshift(demoPurchase);
 
       return NextResponse.json({
         success: true,
         demoMode: true,
-        message: "Purchase unlocked locally (Configure Supabase keys in .env.local to persist in database)",
-        purchase: demoPurchase,
+        message: "Purchase and UTR recorded locally (Configure Supabase keys in .env.local to persist in database)",
+        purchase: {
+          ...demoPurchase,
+          utr_number: utrNumber || transactionId,
+          enrolled_at: enrolledAt,
+          verification_status: "verified",
+        },
       });
     }
 
@@ -171,7 +179,10 @@ export async function POST(request: Request) {
         amount: amount,
         payment_method: paymentMethod,
         transaction_id: transactionId,
+        utr_number: utrNumber || transactionId,
         status: "active",
+        verification_status: "verified",
+        enrolled_at: enrolledAt,
       })
       .select()
       .single();

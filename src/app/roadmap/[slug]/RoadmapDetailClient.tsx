@@ -41,19 +41,20 @@ const PHASE_BADGE_COLORS: Record<string, string> = {
 
 export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem }) {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [utrInput, setUtrInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [isPurchased, setIsPurchased] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [expandedPhase, setExpandedPhase] = useState<number | null>(null);
+  const [expandedPhase, setExpandedPhase] = useState<number | null>(0);
 
   useEffect(() => {
     setMounted(true);
     let unlocked = false;
     try {
-      const stored = localStorage.getItem(`roadmap_purchased_${roadmap.slug}`);
-      if (stored === "true") {
+      unlocked = localStorage.getItem(`roadmap_purchased_${roadmap.slug}`) === "true";
+      if (unlocked) {
         setIsPurchased(true);
-        unlocked = true;
         setExpandedPhase(0);
       }
     } catch {}
@@ -75,6 +76,9 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
   };
 
   const handleUnlockSuccess = async () => {
+    const userEmail = emailInput.trim() || "student@thatraghavarora.in";
+    const utrNumber = utrInput.trim() || `UTR-${Date.now()}`;
+
     setIsPurchased(true);
     setExpandedPhase(0);
     try {
@@ -97,6 +101,8 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
           itemTitle: roadmap.title,
           amount: roadmap.price,
           paymentMethod: "upi",
+          utrNumber,
+          userEmail,
         }),
       });
     } catch {}
@@ -560,7 +566,46 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* UTR & Student Verification Inputs */}
+            <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50 mb-4 space-y-3">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-black uppercase tracking-wider text-black">
+                  Enter Payment & Verification Details
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+                  Your Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. student@gmail.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-bold bg-white focus:outline-hidden focus:ring-2 focus:ring-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+                  12-Digit UPI UTR / Bank Ref Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 428910294821 (from UPI app receipt)"
+                  value={utrInput}
+                  onChange={(e) => setUtrInput(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border-2 border-black text-xs font-mono font-bold bg-yellow-50 focus:outline-hidden focus:ring-2 focus:ring-black"
+                />
+                <p className="text-[10px] text-neutral-500 mt-1 font-medium">
+                  Used by Admin to verify your payment directly against bank statement.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mb-3">
               <a
                 href="https://instagram.com/thatraghavarora"
                 target="_blank"
@@ -571,13 +616,14 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
               </a>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-neutral-200">
-              <p className="text-[10px] text-center font-bold text-neutral-500 mb-3">Already paid? Click below to mark as unlocked:</p>
+            <div className="mt-4 pt-3 border-t border-neutral-200">
+              <p className="text-[10px] text-center font-bold text-neutral-500 mb-2">Paid with UTR or testing access?</p>
               <button
                 onClick={handleUnlockSuccess}
-                className="w-full py-2.5 rounded-xl border-2 border-black bg-emerald-300 hover:bg-emerald-400 text-black font-black text-xs uppercase transition-colors"
+                className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                ✓ I have paid — Unlock Now
+                <Check className="w-4 h-4" />
+                <span>Confirm Payment & Unlock Now</span>
               </button>
             </div>
           </div>
