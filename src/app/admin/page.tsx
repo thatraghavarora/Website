@@ -26,10 +26,12 @@ import {
   Terminal,
   Activity,
   UserCheck,
-  Shield
+  Shield,
+  Map
 } from "lucide-react";
+import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 
-type TabType = "overview" | "inquiries" | "purchases" | "users" | "validation";
+type TabType = "overview" | "inquiries" | "purchases" | "users" | "validation" | "roadmap";
 
 interface InquiryItem {
   id: string;
@@ -549,6 +551,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
             { id: "overview", label: "Overview & Metrics", icon: Activity },
+            { id: "roadmap", label: "Paid Roadmap (Deep Curriculum)", icon: Map },
             { id: "inquiries", label: `Hire Me Leads (${inquiries.length})`, icon: Mail },
             { id: "purchases", label: `Roadmap Purchases (${purchases.length})`, icon: ShoppingBag },
             { id: "users", label: `Users & Roles (${users.length})`, icon: Users },
@@ -1273,6 +1276,11 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* TAB 6: PAID ROADMAP DEEP CURRICULUM                          */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {activeTab === "roadmap" && <AdminRoadmapCurriculum />}
       </div>
 
       {/* ══ MODAL 1: VIEW FULL INQUIRY DETAILS ═════════════════════════ */}
