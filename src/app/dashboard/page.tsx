@@ -2545,22 +2545,8 @@ export default function DashboardPage() {
       />
 
       <div className="flex-1 flex flex-col md:ml-64 min-w-0">
-        {/* Header (Text on Left, Avatar on Right, NO extra icons or hamburgers) */}
-        <header className="sticky top-0 z-20 h-16 bg-white border-b-[3px] border-black flex items-center justify-between px-4 sm:px-6">
-          {/* Left: Active Section Indicator (Brand is only in left panel) */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-neutral-100 border-2 border-black font-mono text-xs font-black uppercase text-black shadow-brutal-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>
-                {activeTab === "home" && "Dashboard"}
-                {activeTab === "courses" && "My Courses"}
-                {activeTab === "roadmap" && "Roadmaps"}
-                {activeTab === "community" && "Community"}
-                {activeTab === "settings" && "Settings"}
-              </span>
-            </span>
-          </div>
-
+        {/* Header: Only right side (Logout + Avatar) */}
+        <header className="sticky top-0 z-20 h-16 bg-white border-b-[3px] border-black flex items-center justify-end px-4 sm:px-6">
           {/* Right: Logout + Avatar */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
