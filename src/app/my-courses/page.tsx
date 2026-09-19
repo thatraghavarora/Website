@@ -74,7 +74,7 @@ export default function MyCoursesPlayerPage() {
               <span className="w-3 h-3 rounded-full bg-yellow-500 border border-black" />
               <span className="w-3 h-3 rounded-full bg-green-500 border border-black" />
               <span className="font-mono-code text-xs text-neutral-400 ml-2">
-                kali@hackerraghavarora:~# {currentLecture.title}
+                kali@thatraghavarora:~# {currentLecture.title}
               </span>
             </div>
 

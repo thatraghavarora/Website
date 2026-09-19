@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, User, Menu, X, Terminal } from "lucide-react";
+import { Moon, Sun, User, Menu, X, Terminal, Shield } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,6 +16,7 @@ export default function Navbar() {
     // { href: "/gallery", label: "Gallery"  },
     { href: "/courses", label: "Courses"  },
     { href: "/roadmap", label: "Roadmap"  },
+    { href: "/hire-me", label: "Hire Me"  },
     { href: "/blog",    label: "Blog"     },
     { href: "/contact", label: "Contact"  },
   ];
@@ -48,24 +49,24 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-sm border-b-[3px] border-black transition-colors"
       style={{ backgroundColor: "var(--nav-bg)" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 group text-xl sm:text-2xl font-black tracking-tight"
+          className="flex items-center gap-2 group text-lg sm:text-xl font-black tracking-tight"
           style={{ color: "var(--fg)" }}
           id="nav-logo"
         >
-          <span className="bg-black text-white px-2 py-0.5 rounded-md font-mono text-lg font-black group-hover:bg-blue-600 transition-colors">
+          <span className="bg-black text-white px-2 py-0.5 rounded-md font-mono text-sm sm:text-base font-black group-hover:bg-blue-600 transition-colors">
             &lt;/&gt;
           </span>
           <span className="group-hover:text-blue-600 transition-colors">
-            hackerraghavarora
+            thatraghavarora
           </span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-7 text-base font-bold" style={{ color: "var(--fg-muted)" }}>
+        <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-bold" style={{ color: "var(--fg-muted)" }}>
           {navLinks.map(({ href, label }) => {
             const active = isActive(href);
             return (
@@ -89,34 +90,50 @@ export default function Navbar() {
         </nav>
 
         {/* Right CTA & Dark Mode Toggle */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
           <button
             onClick={toggleDarkMode}
             aria-label="Toggle dark mode"
-            className="w-11 h-11 rounded-full border-[2.5px] border-black flex items-center justify-center shadow-brutal-sm hover:-translate-y-0.5 hover:shadow-brutal transition-all"
+            className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center shadow-brutal-xs hover:-translate-y-0.5 hover:shadow-brutal-sm transition-all"
             style={{ backgroundColor: "var(--bg-card)", color: "var(--fg)" }}
             id="theme-toggle-btn"
           >
             {darkMode
-              ? <Sun className="w-5 h-5 text-amber-400" />
-              : <Moon className="w-5 h-5" style={{ color: "var(--fg)" }} />}
+              ? <Sun className="w-4 h-4 text-amber-400" />
+              : <Moon className="w-4 h-4" style={{ color: "var(--fg)" }} />}
           </button>
 
           <Link
+            href="/admin"
+            className="w-9 h-9 rounded-full border-2 border-black flex items-center justify-center bg-amber-300 hover:bg-amber-400 text-black shadow-brutal-xs hover:-translate-y-0.5 hover:shadow-brutal-sm transition-all"
+            title="Admin Command Center"
+            id="nav-admin-btn"
+          >
+            <Shield className="w-4 h-4 stroke-[2.5]" />
+          </Link>
+
+          <Link
             href="/login"
-            className="btn-brutal btn-brutal-primary px-5 py-2.5 text-sm font-black"
+            className="btn-brutal btn-brutal-primary px-3.5 py-1.5 text-xs sm:text-sm font-black"
             id="nav-auth-btn"
           >
-            <User className="w-4 h-4" /> Login / Sign Up
+            <User className="w-3.5 h-3.5" /> Login / Sign Up
           </Link>
         </div>
 
         {/* Mobile: theme + hamburger */}
-        <div className="flex md:hidden items-center gap-3">
+        <div className="flex md:hidden items-center gap-2">
+          <Link
+            href="/admin"
+            className="w-8 h-8 rounded-full border-2 border-black flex items-center justify-center bg-amber-300 text-black shadow-brutal-xs"
+            title="Admin Console"
+          >
+            <Shield className="w-4 h-4 stroke-[2.5]" />
+          </Link>
           <button
             onClick={toggleDarkMode}
             aria-label="Toggle theme"
-            className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center shadow-brutal-sm"
+            className="w-8 h-8 rounded-full border-2 border-black flex items-center justify-center shadow-brutal-xs"
             style={{ backgroundColor: "var(--bg-card)" }}
           >
             {darkMode
@@ -125,11 +142,11 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 border-[2.5px] border-black rounded-lg bg-yellow-300 shadow-brutal-sm text-black"
+            className="p-1.5 border-2 border-black rounded-lg bg-yellow-300 shadow-brutal-xs text-black"
             aria-label="Toggle mobile menu"
             id="mobile-menu-toggle"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -147,6 +164,7 @@ export default function Navbar() {
               // { href: "/gallery",  label: "Gallery"       },
               { href: "/courses",  label: "Courses"       },
               { href: "/roadmap",  label: "Roadmap"       },
+              { href: "/hire-me",  label: "Hire Me / 1:1" },
               { href: "/blog",     label: "Blog"          },
             ].map(({ href, label, icon }) => {
               const active = isActive(href);
@@ -175,6 +193,14 @@ export default function Navbar() {
               style={{ backgroundColor: "var(--bg-card)" }}
             >
               Student Portal
+            </Link>
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-2 border-2 border-black rounded-xl shadow-brutal-sm bg-amber-300 text-black font-black flex items-center justify-between"
+            >
+              <span>Admin Console</span>
+              <Shield className="w-4 h-4 stroke-[2.5]" />
             </Link>
             <Link
               href="/login"

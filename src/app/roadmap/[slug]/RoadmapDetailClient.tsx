@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Lock,
+  Unlock,
   Flag,
   Flame,
   Globe,
@@ -22,7 +23,9 @@ import {
   Check,
   ShieldCheck,
   Layers,
-  Zap
+  Zap,
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { RoadmapItem } from "@/data/roadmapData";
@@ -31,6 +34,30 @@ import { YoutubeIcon } from "@/components/SocialIcons";
 export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem }) {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [isPurchased, setIsPurchased] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const stored = localStorage.getItem(`roadmap_purchased_${roadmap.slug}`);
+      if (stored === "true") {
+        setIsPurchased(true);
+      }
+    } catch {
+      // localStorage may fail in private window mode
+    }
+
+    // Check Supabase backend for active purchase
+    fetch(`/api/purchases?slug=${roadmap.slug}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isUnlocked) {
+          setIsPurchased(true);
+        }
+      })
+      .catch(() => {});
+  }, [roadmap.slug]);
 
   const handleEnroll = () => {
     setIsPurchaseModalOpen(true);
@@ -39,6 +66,51 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
       spread: 70,
       origin: { y: 0.6 }
     });
+  };
+
+  const handleUnlockSuccess = async () => {
+    setIsPurchased(true);
+    try {
+      localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
+    } catch {}
+    setIsPurchaseModalOpen(false);
+    confetti({
+      particleCount: 160,
+      spread: 80,
+      origin: { y: 0.6 }
+    });
+
+    // Sync purchase with Supabase backend database
+    try {
+      await fetch("/api/purchases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemType: "roadmap",
+          itemSlug: roadmap.slug,
+          itemTitle: roadmap.title,
+          amount: roadmap.price,
+          paymentMethod: "upi",
+        }),
+      });
+    } catch {}
+  };
+
+  const handleToggleTestPurchase = () => {
+    const next = !isPurchased;
+    setIsPurchased(next);
+    try {
+      if (next) {
+        localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      } else {
+        localStorage.removeItem(`roadmap_purchased_${roadmap.slug}`);
+      }
+    } catch {}
   };
 
   const learningOutcomes = [
@@ -105,18 +177,22 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
   const ctfTopics = [
     {
       title: "PicoCTF & Beginner Web Challenges",
+      badge: "Beginner Level",
       desc: "Understanding source inspection, cookie manipulation, simple SQLi, and request tampering in CTF environments."
     },
     {
       title: "Web Exploitation CTF Mindset",
+      badge: "Solver Scripts",
       desc: "How to deconstruct problem statements, analyze hinted vulnerabilities, and craft custom Python solver scripts."
     },
     {
       title: "CTF to Real-World Pentesting Transition",
+      badge: "Real-World Prep",
       desc: "Key differences between artificial CTF flags and finding genuine vulnerabilities in live production targets."
     },
     {
       title: "Recommended CTF Platforms & Events",
+      badge: "Practice Platforms",
       desc: "Structured list of ongoing platforms (CTFtime, HackTheBox CTFs, OverTheWire) to practice problem-solving."
     }
   ];
@@ -125,37 +201,51 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
     {
       name: "The Cyber Mentor (Heath Adams)",
       focus: "Practical Ethical Hacking & Web Pentesting",
-      desc: "Complete hands-on masterclasses teaching real-world penetration testing workflows from the ground up."
+      desc: "Complete hands-on masterclasses teaching real-world penetration testing workflows from the ground up.",
+      url: "https://www.youtube.com/@TCMSecurityAcademy",
+      badge: "Top Recommendation"
     },
     {
       name: "Rana Khalil",
       focus: "Web Security Academy Walkthroughs",
-      desc: "Deeply technical, crystal-clear video solutions solving PortSwigger Academy labs with manual & scripted methods."
+      desc: "Deeply technical, crystal-clear video solutions solving PortSwigger Academy labs with manual & scripted methods.",
+      url: "https://www.youtube.com/@RanaKhalil101",
+      badge: "Best Lab Walkthroughs"
     },
     {
       name: "NahamSec (Ben Sadeghipour)",
       focus: "Bug Bounty Hunting & Live Recon",
-      desc: "Live recon sessions, tooling setups, interview series with top bounty hunters, and practical hunting advice."
+      desc: "Live recon sessions, tooling setups, interview series with top bounty hunters, and practical hunting advice.",
+      url: "https://www.youtube.com/@NahamSec",
+      badge: "Bounty Methodology"
     },
     {
       name: "InsiderPhD (Katie Paxton-Fear)",
       focus: "Bug Bounty Guides & API Testing",
-      desc: "Beginner-friendly explanations of finding your first bug, API vulnerability research, and structured methodology."
+      desc: "Beginner-friendly explanations of finding your first bug, API vulnerability research, and structured methodology.",
+      url: "https://www.youtube.com/@InsiderPhD",
+      badge: "Beginner Friendly"
     },
     {
       name: "John Hammond",
       focus: "CTFs & In-Depth Exploit Analysis",
-      desc: "Detailed CTF challenge walkthroughs, reverse engineering, and real-world vulnerability post-mortems."
+      desc: "Detailed CTF challenge walkthroughs, reverse engineering, and real-world vulnerability post-mortems.",
+      url: "https://www.youtube.com/@_JohnHammond",
+      badge: "Deep Analysis"
     },
     {
       name: "NetworkChuck",
       focus: "Networking & Linux Fundamentals",
-      desc: "High-energy tutorials explaining TCP/IP, IP subnetting, Wireshark packet analysis, and lab setups."
+      desc: "High-energy tutorials explaining TCP/IP, IP subnetting, Wireshark packet analysis, and lab setups.",
+      url: "https://www.youtube.com/@NetworkChuck",
+      badge: "Networking Fundamentals"
     },
     {
       name: "STÖK (Fredrik Alexandersson)",
       focus: "Hacker Mindset & Bounty Thursdays",
-      desc: "Practical Burp Suite tips, hardware setups, conference recaps, and mental resilience for security researchers."
+      desc: "Practical Burp Suite tips, hardware setups, conference recaps, and mental resilience for security researchers.",
+      url: "https://www.youtube.com/@STOKfredrik",
+      badge: "Hacker Mindset"
     }
   ];
 
@@ -199,26 +289,26 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
           {/* Left Column: 8 cols */}
           <div className="lg:col-span-8 space-y-10">
             {/* Header Card */}
-            <div className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal-xl">
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full border-2 border-black bg-purple-200 text-purple-900 font-black text-xs uppercase tracking-wider">
+            <div className="rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-8 shadow-brutal-xl">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="px-3 py-0.5 rounded-full border-2 border-black bg-purple-200 text-purple-900 font-black text-xs uppercase tracking-wider">
                   {roadmap.category}
                 </span>
-                <span className="px-3 py-1 rounded-full border-2 border-black bg-yellow-200 text-black font-black text-xs uppercase tracking-wider">
+                <span className="px-3 py-0.5 rounded-full border-2 border-black bg-yellow-200 text-black font-black text-xs uppercase tracking-wider">
                   {roadmap.level}
                 </span>
                 {roadmap.badge && (
-                  <span className="px-3 py-1 rounded-full border-2 border-black bg-amber-300 text-black font-black text-xs uppercase tracking-wider shadow-brutal-sm">
+                  <span className="px-3 py-0.5 rounded-full border-2 border-black bg-amber-300 text-black font-black text-xs uppercase tracking-wider shadow-brutal-sm">
                     {roadmap.badge}
                   </span>
                 )}
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-black text-black font-display tracking-tight leading-tight mb-4">
+              <h1 className="text-2xl sm:text-4xl font-black text-black font-display tracking-tight leading-tight mb-3">
                 {roadmap.title}
               </h1>
 
-              <p className="text-lg sm:text-xl font-bold text-neutral-700 mb-6 leading-relaxed">
+              <p className="text-base sm:text-lg font-bold text-neutral-700 mb-5 leading-relaxed">
                 {roadmap.subtitle}
               </p>
 
@@ -286,49 +376,368 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
             </div>
 
             {/* ══ 2. FREE YOUTUBE CHANNELS TO STUDY ═════════════ */}
-            <div className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal">
-              <div className="flex items-center gap-2.5 mb-2">
-                <YoutubeIcon className="w-6 h-6 text-red-600 fill-current" />
-                <h2 className="text-2xl sm:text-3xl font-black text-black font-display">
-                  Free YouTube Channels To Study
-                </h2>
+            <div id="youtube-channels-section" className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <YoutubeIcon className="w-6 h-6 text-red-600 fill-current" />
+                  <h2 className="text-2xl sm:text-3xl font-black text-black font-display">
+                    Free YouTube Channels To Study
+                  </h2>
+                </div>
+
+                {/* Lock / Unlock Status Badge */}
+                {mounted && (
+                  <div>
+                    {isPurchased ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-emerald-300 text-black text-xs font-black uppercase tracking-wider shadow-brutal-sm">
+                        <Unlock className="w-3.5 h-3.5" />
+                        <span>All Names Unlocked</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-amber-300 text-black text-xs font-black uppercase tracking-wider shadow-brutal-sm">
+                        <Lock className="w-3.5 h-3.5 text-black" />
+                        <span>Names Hidden (Buy to Unlock)</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-6">
-                Curated high-signal YouTube educators and specific playlists recommended in the roadmap.
+
+              <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-6 leading-relaxed">
+                {isPurchased
+                  ? "Here are Raghav's handpicked YouTube educators. Click through to watch their free video playlists and complete courses."
+                  : "Curated high-signal YouTube educators and specific playlists recommended in the roadmap. Channel names are hidden and will be revealed once you buy the roadmap."}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {youtubeChannels.map((yt, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50 flex items-center gap-3 shadow-brutal-sm">
-                    <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-300 flex items-center justify-center shrink-0">
-                      <YoutubeIcon className="w-4 h-4 text-red-600 fill-current" />
+              {/* Grid of channels */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {youtubeChannels.map((yt, idx) => {
+                  if (!isPurchased) {
+                    // LOCKED STATE: Channel Name is HIDDEN
+                    return (
+                      <div
+                        key={idx}
+                        onClick={handleEnroll}
+                        className="p-4 rounded-2xl border-2 border-black bg-neutral-50 hover:bg-amber-50/70 transition-all cursor-pointer shadow-brutal-sm group relative overflow-hidden flex flex-col justify-between"
+                        title="Click to buy roadmap and unlock channel name"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="w-9 h-9 rounded-xl bg-red-100 border-2 border-black flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-brutal-xs">
+                            <YoutubeIcon className="w-4 h-4 text-red-600 fill-current" />
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full border border-black bg-amber-200 text-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-brutal-xs">
+                            <Lock className="w-2.5 h-2.5 text-black" />
+                            <span>Hidden</span>
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {/* Channel Name Masked / Hidden */}
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-neutral-200/90 border border-neutral-300">
+                              <span className="font-mono text-xs font-black tracking-widest text-neutral-500 select-none blur-[4px]">
+                                ██████████████
+                              </span>
+                              <span className="text-[10px] font-black uppercase text-neutral-700">
+                                Channel #{idx + 1}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs font-bold text-neutral-800 leading-snug">
+                            {yt.focus}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">
+                            {yt.desc}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 pt-2.5 border-t border-neutral-200 flex items-center justify-between text-[11px] font-black text-amber-700 group-hover:text-black transition-colors">
+                          <span className="flex items-center gap-1">
+                            <Lock className="w-3 h-3" />
+                            <span>Buy Roadmap to Show Name</span>
+                          </span>
+                          <span className="group-hover:translate-x-1 transition-transform font-display">
+                            Unlock ↗
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // UNLOCKED STATE: Channel Name is SHOWN
+                  return (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl border-2 border-black bg-white hover:bg-emerald-50/40 transition-all shadow-brutal-sm flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-red-50 border-2 border-black flex items-center justify-center shrink-0 shadow-brutal-xs">
+                            <YoutubeIcon className="w-4 h-4 text-red-600 fill-current" />
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full border border-black bg-emerald-300 text-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-brutal-xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            <span>Unlocked</span>
+                          </span>
+                        </div>
+
+                        {/* Revealed Channel Name */}
+                        <h4 className="font-black text-base text-black font-display group-hover:text-red-600 transition-colors">
+                          {yt.name}
+                        </h4>
+                        <p className="text-xs font-bold text-purple-800 mt-0.5">
+                          {yt.focus}
+                        </p>
+                        <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                          {yt.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-neutral-200 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-emerald-900 bg-emerald-200 px-2 py-0.5 rounded border border-emerald-400">
+                          {yt.badge}
+                        </span>
+                        <a
+                          href={yt.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-black text-red-600 hover:text-red-700 hover:underline"
+                        >
+                          <span>Open Channel</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
                     </div>
-                    <h4 className="font-black text-sm text-black font-display">{yt.name}</h4>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
+              {/* Bottom Callout */}
+              {!isPurchased ? (
+                <div className="mt-6 p-5 rounded-2xl border-[2.5px] border-black bg-amber-100 shadow-brutal-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-black text-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-black text-sm text-black">
+                        All 7 YouTube Channel Names Hidden
+                      </h4>
+                      <p className="text-xs text-neutral-800 font-medium">
+                        Buy the roadmap to instantly reveal channel identities, direct links, and curated playlist tracks.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleEnroll}
+                    className="btn-brutal btn-brutal-primary text-xs uppercase font-black px-4 py-2.5 shrink-0 whitespace-nowrap"
+                  >
+                    Unlock Roadmap ({roadmap.price})
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-6 p-5 rounded-2xl border-[2.5px] border-black bg-emerald-100 shadow-brutal-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-black text-emerald-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-black text-sm text-black flex items-center gap-2 flex-wrap">
+                        <span>All YouTube Channels Revealed &amp; Unlocked!</span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-300 text-black text-[10px] font-black uppercase border border-black">
+                          Verified Buyer
+                        </span>
+                      </h4>
+                      <p className="text-xs text-neutral-800 font-medium">
+                        You have verified access to every recommended YouTube creator and course link above.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleTestPurchase}
+                    className="text-xs font-black text-neutral-600 hover:text-black underline shrink-0 whitespace-nowrap"
+                    title="Toggle between locked and unlocked state for preview"
+                  >
+                    Demo: Lock Channel Names
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ══ 3. CTF (CAPTURE THE FLAG) ════════════════════ */}
-            <div className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal">
-              <div className="flex items-center gap-2.5 mb-2">
-                <Flag className="w-6 h-6 text-amber-600 stroke-[2.5]" />
-                <h2 className="text-2xl sm:text-3xl font-black text-black font-display">
-                  CTF (Capture The Flag)
-                </h2>
+            <div id="ctf-section" className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <Flag className="w-6 h-6 text-amber-600 stroke-[2.5]" />
+                  <h2 className="text-2xl sm:text-3xl font-black text-black font-display">
+                    CTF (Capture The Flag)
+                  </h2>
+                </div>
+
+                {/* Lock / Unlock Status Badge */}
+                {mounted && (
+                  <div>
+                    {isPurchased ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-emerald-300 text-black text-xs font-black uppercase tracking-wider shadow-brutal-sm">
+                        <Unlock className="w-3.5 h-3.5" />
+                        <span>All CTF Guides Unlocked</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-amber-300 text-black text-xs font-black uppercase tracking-wider shadow-brutal-sm">
+                        <Lock className="w-3.5 h-3.5 text-black" />
+                        <span>CTF Guides Hidden (Buy to Unlock)</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-6">
-                How to leverage competitive web CTF challenges to build problem-solving skills and rapid exploit construction.
+
+              <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-6 leading-relaxed">
+                {isPurchased
+                  ? "Here are Raghav's complete CTF challenge guides and problem-solving walkthroughs. Use these to transition from basic challenges to real-world penetration testing."
+                  : "How to leverage competitive web CTF challenges to build problem-solving skills and rapid exploit construction. Strategy guides are hidden until roadmap purchase."}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ctfTopics.map((ctf, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl border-2 border-black bg-neutral-50 shadow-brutal-sm">
-                    <h4 className="font-black text-sm text-black font-display mb-1">{ctf.title}</h4>
-                    <p className="text-xs text-neutral-600 leading-relaxed">{ctf.desc}</p>
-                  </div>
-                ))}
+                {ctfTopics.map((ctf, idx) => {
+                  if (!isPurchased) {
+                    // LOCKED STATE: CTF Title & Guide is HIDDEN
+                    return (
+                      <div
+                        key={idx}
+                        onClick={handleEnroll}
+                        className="p-4 rounded-2xl border-2 border-black bg-neutral-50 hover:bg-amber-50/70 transition-all cursor-pointer shadow-brutal-sm group relative overflow-hidden flex flex-col justify-between"
+                        title="Click to buy roadmap and unlock CTF guide"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="w-9 h-9 rounded-xl bg-amber-100 border-2 border-black flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-brutal-xs">
+                            <Flag className="w-4 h-4 text-amber-700 stroke-[2.5]" />
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full border border-black bg-amber-200 text-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-brutal-xs">
+                            <Lock className="w-2.5 h-2.5 text-black" />
+                            <span>Hidden</span>
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-neutral-200/90 border border-neutral-300">
+                              <span className="font-mono text-xs font-black tracking-widest text-neutral-500 select-none blur-[4px]">
+                                ██████████████
+                              </span>
+                              <span className="text-[10px] font-black uppercase text-neutral-700">
+                                CTF Topic #{idx + 1}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs font-bold text-neutral-600 line-clamp-2 leading-relaxed">
+                            Complete challenge strategy breakdown, solver scripts, and transition workflows locked.
+                          </p>
+                        </div>
+
+                        <div className="mt-4 pt-2.5 border-t border-neutral-200 flex items-center justify-between text-[11px] font-black text-amber-700 group-hover:text-black transition-colors">
+                          <span className="flex items-center gap-1">
+                            <Lock className="w-3 h-3" />
+                            <span>Buy Roadmap to Show Guide</span>
+                          </span>
+                          <span className="group-hover:translate-x-1 transition-transform font-display">
+                            Unlock ↗
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // UNLOCKED STATE: CTF Topic is SHOWN
+                  return (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl border-2 border-black bg-white hover:bg-amber-50/30 transition-all shadow-brutal-sm flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-amber-100 border-2 border-black flex items-center justify-center shrink-0 shadow-brutal-xs">
+                            <Flag className="w-4 h-4 text-amber-700 stroke-[2.5]" />
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full border border-black bg-emerald-300 text-black text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-brutal-xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                            <span>Unlocked</span>
+                          </span>
+                        </div>
+
+                        <h4 className="font-black text-base text-black font-display group-hover:text-amber-700 transition-colors">
+                          {ctf.title}
+                        </h4>
+                        <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                          {ctf.desc}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-neutral-200 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                          {ctf.badge}
+                        </span>
+                        <span className="text-xs font-bold text-neutral-500">
+                          Included in Roadmap
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* Bottom Callout */}
+              {!isPurchased ? (
+                <div className="mt-6 p-5 rounded-2xl border-[2.5px] border-black bg-amber-100 shadow-brutal-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-black text-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-black text-sm text-black">
+                        4 CTF Challenge Strategy Guides Hidden
+                      </h4>
+                      <p className="text-xs text-neutral-800 font-medium">
+                        Buy the roadmap to instantly reveal all CTF topic blueprints, solver techniques, and event platforms.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleEnroll}
+                    className="btn-brutal btn-brutal-primary text-xs uppercase font-black px-4 py-2.5 shrink-0 whitespace-nowrap"
+                  >
+                    Unlock Roadmap ({roadmap.price})
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-6 p-5 rounded-2xl border-[2.5px] border-black bg-emerald-100 shadow-brutal-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-black text-emerald-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-black text-sm text-black flex items-center gap-2 flex-wrap">
+                        <span>All CTF Strategy Topics Revealed &amp; Unlocked!</span>
+                        <span className="px-2 py-0.5 rounded bg-emerald-300 text-black text-[10px] font-black uppercase border border-black">
+                          Verified Buyer
+                        </span>
+                      </h4>
+                      <p className="text-xs text-neutral-800 font-medium">
+                        You have verified access to every CTF breakdown, problem-solving mindset, and challenge list above.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleTestPurchase}
+                    className="text-xs font-black text-neutral-600 hover:text-black underline shrink-0 whitespace-nowrap"
+                    title="Toggle between locked and unlocked state for preview"
+                  >
+                    Demo: Lock CTF Guides
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ══ 4. LABS ══════════════════════════════════════ */}
@@ -513,7 +922,7 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
           {/* Right Column: Sticky Pricing & Action Card (4 cols) */}
           <div className="lg:col-span-4">
-            <div className="sticky top-28 rounded-3xl border-[3.5px] border-black bg-white p-6 shadow-brutal-xl">
+            <div className="sticky top-20 rounded-3xl border-[3.5px] border-black bg-white p-6 shadow-brutal-xl">
               {/* Preview image */}
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-black mb-6 shadow-brutal-sm">
                 <Image
@@ -542,13 +951,28 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
               </p>
 
               {/* Action Button */}
-              <button
-                onClick={handleEnroll}
-                className="btn-brutal btn-brutal-yellow w-full py-4 text-base tracking-wide uppercase font-black mb-4"
-                id="roadmap-buy-now-btn"
-              >
-                Unlock Full Roadmap
-              </button>
+              {isPurchased ? (
+                <div className="space-y-3 mb-4">
+                  <div className="p-3.5 rounded-2xl border-2 border-black bg-emerald-400 text-black font-black text-center text-sm uppercase shadow-brutal-sm flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                    <span>Roadmap Unlocked &amp; Active</span>
+                  </div>
+                  <button
+                    onClick={handleToggleTestPurchase}
+                    className="w-full text-center text-[11px] font-bold text-neutral-500 hover:text-black underline"
+                  >
+                    Demo Mode: Re-lock Roadmap
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleEnroll}
+                  className="btn-brutal btn-brutal-yellow w-full py-4 text-base tracking-wide uppercase font-black mb-4"
+                  id="roadmap-buy-now-btn"
+                >
+                  Unlock Full Roadmap
+                </button>
+              )}
 
               {/* Perks List */}
               <div className="space-y-3 pt-4 border-t-2 border-neutral-200 text-xs font-bold text-neutral-700">
@@ -624,11 +1048,11 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
               <div className="pt-4 border-t border-neutral-200 space-y-3">
                 <p className="text-xs font-extrabold uppercase tracking-wider text-neutral-500">
-                  Select Payment Method:
+                  Select Payment Option:
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <a
-                    href="https://instagram.com/hackerraghavarora"
+                    href="https://instagram.com/thatraghavarora"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-brutal btn-brutal-primary py-3 text-xs uppercase font-black text-center"
@@ -644,8 +1068,23 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                     PayPal / Card ($2)
                   </a>
                 </div>
+
+                <div className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50 flex flex-col gap-2 mt-2 shadow-brutal-xs">
+                  <p className="text-xs font-bold text-neutral-700">
+                    Paid via UPI / PayPal or testing? Activate instant access:
+                  </p>
+                  <button
+                    onClick={handleUnlockSuccess}
+                    className="btn-brutal bg-emerald-400 text-black py-2.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-brutal-sm hover:bg-emerald-300"
+                    id="confirm-instant-unlock-btn"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>I Have Paid — Unlock Roadmap &amp; Channels</span>
+                  </button>
+                </div>
+
                 <p className="text-[11px] text-center font-bold text-neutral-500 pt-1">
-                  Contact Raghav on Instagram / Twitter to get instant verified access badge!
+                  Unlocking instantly reveals all hidden YouTube channel names &amp; direct links!
                 </p>
               </div>
             </div>

@@ -22,7 +22,7 @@ import { CrownDoodle, SquiggleDoodle } from "@/components/Doodles";
 import HallOfFameMarquee from "@/components/HallOfFameMarquee";
 
 export const metadata = {
-  title: "About Raghav Arora | hackerraghavarora",
+  title: "About Raghav Arora | thatraghavarora",
   description:
     "Raghav Arora — Founder of Webpeaker, Ethical Hacker, Full Stack Developer, AI Patent Holder. Secured NASA, WHO, Nokia, Jio, OLA & 50+ organisations.",
 };

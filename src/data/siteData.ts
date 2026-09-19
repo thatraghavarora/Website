@@ -89,9 +89,9 @@ export interface Service {
 }
 
 export const siteProfile = {
-  brand: "hackerraghavarora",
+  brand: "thatraghavarora",
   name: "Raghav Arora",
-  handle: "@hackerraghavarora",
+  handle: "@thatraghavarora",
   heroLabel: "CYBERSECURITY × DEVELOPMENT × LEARNING",
   headline: ["HI, I'M", "RAGHAV", "ARORA"],
   subtitle: "Cyber Security Enthusiast | Full Stack Developer | Bug Bounty Hunter | Educator | Entrepreneur",
@@ -114,11 +114,11 @@ export const siteProfile = {
   ],
   socials: {
     linkedin: "https://linkedin.com/in/raghavarora",
-    instagram: "https://instagram.com/hackerraghavarora",
+    instagram: "https://instagram.com/thatraghavarora",
     github: "https://github.com/raghavarora",
     x: "https://twitter.com/raghavarora",
-    youtube: "https://youtube.com/@hackerraghavarora",
-    email: "contact@hackerraghavarora.com"
+    youtube: "https://youtube.com/@thatraghavarora",
+    email: "contact@thatraghavarora.com"
   }
 };
 
@@ -423,7 +423,7 @@ export const projects: Project[] = [
     accentColor: "bg-[#EDE9FE]", // Light Purple
     textColor: "text-black",
     featured: true,
-    link: "https://passwords.hackerraghavarora.com",
+    link: "https://passwords.thatraghavarora.com",
     github: "https://github.com/raghavarora/secure-password-generator",
     stats: [
       { label: "GitHub Stars", value: "320+" },
@@ -465,7 +465,7 @@ export const projects: Project[] = [
   },
   {
     slug: "portfolio-website",
-    title: "hackerraghavarora Portfolio",
+    title: "thatraghavarora Portfolio",
     subtitle: "The Neo-Brutalist Digital Playground",
     description: "Personal website, educational academy, and cybersecurity archive built with Next.js, TypeScript, and custom editorial hand-drawn assets.",
     fullDescription: "The very site you are exploring right now! Built from scratch to prove that personal portfolios can break away from sterile corporate SaaS templates with bold ink typography, playful doodles, and brutalist physical interactions.",
@@ -474,8 +474,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#FBCFE8]", // Pink
     textColor: "text-black",
     featured: false,
-    link: "https://hackerraghavarora.com",
-    github: "https://github.com/raghavarora/hackerraghavarora",
+    link: "https://thatraghavarora.com",
+    github: "https://github.com/raghavarora/thatraghavarora",
     stats: [
       { label: "Lighthouse Score", value: "99" },
       { label: "Design System", value: "Neo-Brutalism" },
@@ -769,7 +769,7 @@ As I discovered more vulnerabilities and assisted startups with security, I real
 That insight birthed **Webpeaker**—my digital agency offering both high-performance web development and offensive security audits.
 
 ### Why I Teach
-Through my courses and social platforms under **hackerraghavarora**, I have now reached over 1,000+ students. Seeing a student report their very first bug or launch their first full-stack application is the greatest reward imaginable.
+Through my courses and social platforms under **thatraghavarora**, I have now reached over 1,000+ students. Seeing a student report their very first bug or launch their first full-stack application is the greatest reward imaginable.
 
 Remember: *"A safer digital world starts with a curious mind."* Never stop exploring!
 `,

@@ -4,12 +4,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "hackerraghavarora | Raghav Arora - Cybersecurity, Developer & Educator",
+  title: "thatraghavarora | Raghav Arora - Cybersecurity, Developer & Educator",
   description:
     "Personal hacker portfolio, full stack developer showcase, cybersecurity researcher acknowledged by NASA & WHO, and hands-on online course academy by Raghav Arora.",
   keywords: [
     "Raghav Arora",
-    "hackerraghavarora",
+    "thatraghavarora",
     "Cyber Security",
     "Ethical Hacking",
     "Full Stack Developer",
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     "Webpeaker",
     "Online Courses"
   ],
-  authors: [{ name: "Raghav Arora", url: "https://hackerraghavarora.com" }],
+  authors: [{ name: "Raghav Arora", url: "https://thatraghavarora.com" }],
   openGraph: {
-    title: "hackerraghavarora | Raghav Arora",
+    title: "thatraghavarora | Raghav Arora",
     description:
       "Cyber Security Enthusiast, Full Stack Developer, Bug Bounty Hunter, and Educator.",
-    url: "https://hackerraghavarora.com",
-    siteName: "hackerraghavarora",
+    url: "https://thatraghavarora.com",
+    siteName: "thatraghavarora",
     images: [
       {
         url: "/images/hero-hacker.jpg",

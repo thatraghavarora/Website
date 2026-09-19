@@ -67,7 +67,7 @@ export default async function BlogPostPage({
                 {post.author.name}
               </p>
               <p className="text-xs font-bold text-neutral-600">
-                {post.author.role} • @hackerraghavarora
+                {post.author.role} • @thatraghavarora
               </p>
             </div>
           </div>

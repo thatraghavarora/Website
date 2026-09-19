@@ -77,8 +77,10 @@ export default function Footer() {
               // { href: "/gallery", label: "Gallery" },
               { href: "/courses", label: "Courses" },
               { href: "/roadmap", label: "Roadmap" },
+              { href: "/hire-me", label: "Hire Me" },
               { href: "/blog", label: "Blog" },
               { href: "/dashboard", label: "Dashboard" },
+              { href: "/admin", label: "Admin" },
               { href: "/contact", label: "Contact" },
             ].map(({ href, label }) => (
               <Link key={href} href={href} className="hover:text-blue-500 transition-colors">
@@ -121,7 +123,7 @@ export default function Footer() {
             <Heart className="w-3.5 h-3.5 fill-red-500 text-red-500 inline" />
             <span>by Raghav Arora</span>
           </p>
-          <p>© {new Date().getFullYear()} hackerraghavarora. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} thatraghavarora. All rights reserved.</p>
         </div>
       </div>
     </footer>

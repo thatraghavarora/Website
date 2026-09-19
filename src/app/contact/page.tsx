@@ -115,7 +115,7 @@ export default function ContactPage() {
                 Connect on Socials
               </h3>
               <p className="text-xs font-bold text-neutral-700 mb-6">
-                Follow @hackerraghavarora across the web for daily cybersecurity insights:
+                Follow @thatraghavarora across the web for daily cybersecurity insights:
               </p>
 
               <div className="grid grid-cols-2 gap-3">

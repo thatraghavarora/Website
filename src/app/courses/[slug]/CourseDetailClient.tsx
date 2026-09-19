@@ -273,9 +273,9 @@ export default function CourseDetailClient({ course }: { course: Course }) {
             </div>
           </div>
 
-          {/* Right Column: Sticky Pricing & Enrollment Card (4 cols) */}
+          {/* Right Column: Sticky Pricing & Action Card (4 cols) */}
           <div className="lg:col-span-4">
-            <div className="sticky top-28 rounded-3xl border-[3.5px] border-black bg-white p-6 shadow-brutal-xl">
+            <div className="sticky top-20 rounded-3xl border-[3.5px] border-black bg-white p-6 shadow-brutal-xl">
               {/* Preview image */}
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden border-2 border-black mb-6 shadow-brutal-sm">
                 <Image
