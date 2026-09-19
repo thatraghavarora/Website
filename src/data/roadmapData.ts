@@ -126,6 +126,8 @@ export const roadmaps: RoadmapItem[] = [
         duration: "Weeks 1 – 3",
         description: "Before you touch a single exploit, you need to think like a machine. This phase builds your unbreakable technical foundation so every attack you learn later actually makes sense — not just copy-paste hacking.",
         topics: [
+          "What is a Computer Network? — Nodes, Media, Topologies (Star/Mesh), Hubs, Switches, Routers & Firewalls",
+          "How Data Travels — Encapsulation, MAC Addressing, and ARP Protocol mechanics",
           "OSI Model & TCP/IP Protocol Stack — how data really travels across networks",
           "IP Addressing, Subnetting & CIDR notation explained from scratch",
           "DNS Resolution — how domains map to IPs and how attackers abuse it",

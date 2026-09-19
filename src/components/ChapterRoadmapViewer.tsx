@@ -544,6 +544,76 @@ export default function ChapterRoadmapViewer({
               </p>
             </section>
 
+            {/* Docs Section 1.5: Comprehensive Study Notes & Deep-Dive Guide */}
+            {activeLesson.studyNotes && activeLesson.studyNotes.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-black">
+                  <FileText className="w-5 h-5 text-amber-600" />
+                  <h3 className="font-display font-black text-lg uppercase tracking-tight">
+                    In-Depth Study Notes &amp; Architecture
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  {activeLesson.studyNotes.map((note, noteIdx) => (
+                    <div
+                      key={noteIdx}
+                      className="rounded-2xl border-2 border-black bg-white p-5 shadow-brutal-xs space-y-3.5"
+                    >
+                      <div className="flex items-start justify-between gap-3 border-b-2 border-neutral-100 pb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-black shrink-0" />
+                            <h4 className="font-display font-black text-base text-black leading-snug">
+                              {note.heading}
+                            </h4>
+                          </div>
+                          {note.subheading && (
+                            <p className="text-xs font-bold text-neutral-500 mt-0.5 ml-4">
+                              {note.subheading}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-yellow-300 text-black border border-black shrink-0 shadow-brutal-xs">
+                          Part {noteIdx + 1}
+                        </span>
+                      </div>
+
+                      {/* Bullet points */}
+                      <ul className="space-y-2.5">
+                        {note.points.map((pt, ptIdx) => (
+                          <li key={ptIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-800 leading-relaxed font-medium">
+                            <span className="text-yellow-500 font-black mt-0.5 shrink-0 text-sm">▸</span>
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* Optional Diagram or Monospaced Architecture */}
+                      {note.diagramOrCode && (
+                        <div className="rounded-xl border-2 border-neutral-900 bg-neutral-950 p-4 font-mono text-[11px] sm:text-xs text-emerald-400 overflow-x-auto whitespace-pre leading-relaxed shadow-inner">
+                          {note.diagramOrCode}
+                        </div>
+                      )}
+
+                      {/* Optional Callout / Hacker Insight */}
+                      {note.callout && (
+                        <div className="rounded-xl border-2 border-amber-400 bg-amber-50/80 p-3.5 flex items-start gap-2.5">
+                          <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="text-xs font-bold text-amber-950 leading-relaxed">
+                            <span className="font-black uppercase tracking-wider text-[10px] text-amber-700 block mb-0.5">
+                              Offensive Security &amp; Hacker Insight
+                            </span>
+                            {note.callout}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Docs Section 2: Core Attack Concepts & Mechanics */}
             <section className="space-y-3">
               <div className="flex items-center gap-2 text-black">
