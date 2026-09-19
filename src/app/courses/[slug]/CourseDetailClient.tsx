@@ -181,25 +181,26 @@ export default function CourseDetailClient({ course }: { course: Course }) {
                       {isOpen && (
                         <div className="p-4 space-y-2.5 bg-white dark:bg-neutral-900 border-t-2 border-black/10 dark:border-white/10">
                           {section.lectures.map((lecture, lIdx) => (
-                            <div
+                            <Link
                               key={lIdx}
-                              className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-black/20 dark:border-white/10 text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-100"
+                              href={`/courses/${course.slug}/learn?module=${idx}&lecture=${lIdx}`}
+                              className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-black/20 dark:border-white/10 text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 transition-colors group cursor-pointer"
                             >
                               <div className="flex items-center gap-2.5">
-                                <PlayCircle className="w-4 h-4 text-blue-500 shrink-0" />
-                                <span>{lecture.title}</span>
+                                <PlayCircle className="w-4 h-4 text-blue-500 shrink-0 group-hover:scale-110 transition-transform" />
+                                <span className="group-hover:text-blue-600 transition-colors">{lecture.title}</span>
                               </div>
                               <div className="flex items-center gap-3">
                                 {lecture.freePreview && (
                                   <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300 border border-emerald-500 px-2 py-0.5 rounded">
-                                    Preview
+                                    Study Lesson
                                   </span>
                                 )}
                                 <span className="text-neutral-500 dark:text-neutral-400 text-xs">
                                   {lecture.duration}
                                 </span>
                               </div>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       )}
@@ -328,24 +329,42 @@ export default function CourseDetailClient({ course }: { course: Course }) {
                 </div>
               ) : enrolled ? (
                 <div className="rounded-2xl border-2 border-emerald-600 bg-emerald-100 p-4 text-center mb-6">
-                  <p className="font-display font-black text-emerald-900 text-base">
+                  <p className="font-display font-black text-emerald-900 text-base mb-2">
                     🎉 You are enrolled!
                   </p>
                   <Link
+                    href={`/courses/${course.slug}/learn`}
+                    className="btn-brutal bg-emerald-400 hover:bg-emerald-300 text-black border-[2.5px] border-black w-full py-3 text-xs uppercase font-black tracking-wider flex items-center justify-center gap-2 mb-2"
+                  >
+                    <BookOpen className="w-4 h-4 stroke-[2.5]" />
+                    <span>Open Interactive Course &amp; Lab</span>
+                  </Link>
+                  <Link
                     href="/dashboard"
-                    className="mt-2 inline-block btn-brutal btn-brutal-primary w-full py-2.5 text-xs uppercase tracking-wider"
+                    className="inline-block text-xs font-bold text-emerald-900 underline hover:text-black"
                   >
                     Go to Student Dashboard
                   </Link>
                 </div>
               ) : (
-                <button
-                  onClick={handleEnroll}
-                  className="btn-brutal btn-brutal-yellow w-full py-4 text-base tracking-wide uppercase font-black mb-4"
-                  id="enroll-now-btn"
-                >
-                  Enroll Now
-                </button>
+                <div className="space-y-3 mb-6">
+                  <Link
+                    href={`/courses/${course.slug}/learn`}
+                    className="btn-brutal bg-emerald-400 hover:bg-emerald-300 text-black border-[2.5px] border-black w-full py-3.5 text-sm tracking-wide uppercase font-black flex items-center justify-center gap-2 shadow-brutal hover-lift text-center"
+                    id="start-course-btn"
+                  >
+                    <BookOpen className="w-4 h-4 stroke-[2.5]" />
+                    <span>Start Free Masterclass &amp; Lab</span>
+                  </Link>
+
+                  <button
+                    onClick={handleEnroll}
+                    className="btn-brutal btn-brutal-yellow w-full py-3 text-xs tracking-wide uppercase font-black text-center"
+                    id="enroll-now-btn"
+                  >
+                    Enroll &amp; Save Progress
+                  </button>
+                </div>
               )}
 
               {/* Perks List */}

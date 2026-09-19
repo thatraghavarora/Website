@@ -63,6 +63,33 @@ export const chapter4: RoadmapChapter = {
   
   # Evasion scan with decoys and DNS source port:
   sudo nmap -sS -Pn -D RND:5 --source-port 53 target.com`
+        },
+        {
+          heading: "GeeksforGeeks Nmap Masterclass: TCP Connect, SYN Stealth, UDP & Subnet Ping Sweeps",
+          subheading: "Complete packet mechanics, timing controls, and 6 port state classifications",
+          points: [
+            "TCP Connect Scan (-sT): Executes full 3-way handshake (SYN -> SYN-ACK -> ACK) via OS connect() API. If port is open, target responds with SYN-ACK; if closed, target returns RST/ACK. Generates application connection logs but runs without root privileges.",
+            "SYN Stealth Scan (-sS): Crafts raw SYN packet; target responds with SYN-ACK (open); scanner immediately responds with RST to terminate before connection completes. Avoids application logs and finishes faster.",
+            "UDP Scan (-sU): Connectionless probing sending empty or protocol-specific UDP packets. Open ports typically do not respond (open|filtered); closed ports return ICMP Type 3 Code 3 (Port Unreachable). Subject to RFC 1812 ICMP rate limiting.",
+            "Ping Scan (-sn / -sP): Disables port scanning to sweep subnets (e.g. 192.168.1.0/24) for active hosts in seconds using ARP (locally) or ICMP Echo + TCP SYN/ACK (remotely).",
+            "The 6 Port States: Open (service listening), Closed (host up, no service listening, RST returned), Filtered (firewall dropping packets), Unfiltered (responds to ACK scans, open/closed unknown), Open|Filtered (no response in UDP/FIN/Null scans), Closed|Filtered (conflicting idle scan state).",
+          ],
+          callout: "Access the full interactive course with live terminal simulator, quizzes, and high-res packet diagrams at /courses/nmap-scans-for-cyber-security-and-penetration-testing!",
+          diagramOrCode: `GEEKSFORGEEKS NMAP SCAN COMMAND REFERENCE:
+  # 1. TCP Connect Scan (Top 50 Ports):
+  nmap -sT 192.168.1.12 --top-ports 50
+  
+  # 2. SYN Stealth Scan (Top 50 Ports):
+  sudo nmap -sS 192.168.1.12 --top-ports 50
+  
+  # 3. UDP Scan (Top 50 Ports):
+  sudo nmap -sU 192.168.1.12 --top-ports 50
+  
+  # 4. Subnet Ping Sweep (Host Discovery Only):
+  nmap -sn 192.168.1.0/24
+  
+  # 5. Full 65k Port Comprehensive Recon:
+  sudo nmap -sS -sV -T4 -p- -oA full_network_scan 192.168.1.12`
         }
       ],
       keyTopics: [

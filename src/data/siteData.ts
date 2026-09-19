@@ -493,6 +493,121 @@ export const projects: Project[] = [
 
 export const courses: Course[] = [
   {
+    slug: "nmap-scans-for-cyber-security-and-penetration-testing",
+    title: "Nmap Scans for Cyber Security and Penetration Testing",
+    subtitle: "Complete Hands-On Masterclass: Host Discovery, TCP Connect, SYN Stealth, UDP, Port States & Reconnaissance",
+    description: "Master network discovery and port scanning with Nmap. Covers TCP 3-way handshakes, SYN stealth mechanics, UDP caveats, subnet ping sweeps, 6 port state classifications, and vulnerability discovery best practices with diagrams and real terminal outputs.",
+    thumbnail: "/courses/nmap/tcp_open_handshake.webp",
+    level: "All Levels",
+    duration: "4.5 Hours",
+    lessonsCount: 14,
+    studentsCount: 1420,
+    rating: 4.95,
+    reviewsCount: 380,
+    price: "Free",
+    originalPrice: "₹1,499",
+    featured: true,
+    category: "Cybersecurity",
+    badge: "Free Masterclass",
+    instructor: {
+      name: "Raghav Arora",
+      role: "Cyber Security Specialist & Ethical Hacker",
+      bio: "BCA (Cyber Security) & bug bounty hunter acknowledged by NASA, WHO, and Fortune 500s. Practical network mapper, reconnaissance specialist, and defensive security auditor.",
+      avatar: "/images/about-hacker.jpg"
+    },
+    whatYouWillLearn: [
+      "Nmap Fundamentals: Master network discovery, host detection, port probing, and security auditing mechanics.",
+      "Installation & Verification: Install Nmap on Debian/Ubuntu, CentOS/Fedora, Windows, and macOS, and verify version integrity.",
+      "Command Anatomy & Syntax: Master nmap [Scan Type] [Options] {Target} with custom port ranges, timing flags, and CIDR targets.",
+      "TCP Connect Scan (-sT): Dissect the complete 3-way handshake (SYN -> SYN-ACK -> ACK) and analyze open vs closed (RST/ACK) responses.",
+      "SYN Stealth Scan (-sS): Execute half-open scans (SYN -> SYN-ACK -> RST) to bypass standard application logging and speed up discovery.",
+      "UDP Port Scanning (-sU): Overcome connectionless UDP scanning challenges, ICMP rate limiting, and open|filtered ambiguities.",
+      "Ping Scan / Host Discovery (-sn): Map active hosts across entire subnets (e.g. 192.168.1.0/24) without touching destination ports.",
+      "6 Port State Classifications: Decipher Open, Closed, Filtered, Unfiltered, Open|Filtered, and Closed|Filtered results.",
+      "Best Practices & Recon Workflows: Apply timing templates (-T0 to -T5), version detection (-sV), and export scan outputs (-oN, -oX, -oG)."
+    ],
+    requirements: [
+      "Any PC/Laptop running Windows, macOS, or Linux (Kali Linux or Ubuntu recommended).",
+      "Basic understanding of IP addresses and TCP/IP networking (covered in detail in the course).",
+      "Curiosity to learn real-world network reconnaissance and ethical hacking techniques."
+    ],
+    curriculum: [
+      {
+        sectionTitle: "Module 1: Introduction to Nmap & Network Discovery",
+        lectures: [
+          { title: "What is Nmap (Network Mapper) & Its Role in Security Auditing", duration: "14:30", freePreview: true },
+          { title: "Core Capabilities & Feature Matrix of Modern Nmap", duration: "16:45", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 2: Installation, Verification & Command Anatomy",
+        lectures: [
+          { title: "Installing & Verifying Nmap on Linux, Windows & macOS", duration: "15:20", freePreview: true },
+          { title: "Nmap Basic Syntax: Scan Types, Options & Target Specifications", duration: "18:10", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 3: TCP Connect Scan (-sT) & 3-Way Handshake",
+        lectures: [
+          { title: "TCP Connect Scan Mechanics & The Full 3-Way Handshake", duration: "24:30", freePreview: true },
+          { title: "3-Way Handshake Packet Analysis: Open vs. Closed Ports", duration: "28:15", freePreview: true },
+          { title: "Terminal Output Walkthrough: Analyzing a Real TCP Connect Scan", duration: "18:40", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 4: SYN Stealth Scan (-sS) & Half-Open Dynamics",
+        lectures: [
+          { title: "SYN Scan (Stealth / Half-Open) Architecture & Evasion", duration: "26:10", freePreview: true },
+          { title: "Half-Open Packet Dynamics: SYN -> SYN-ACK -> RST Teardown", duration: "27:50", freePreview: true },
+          { title: "Terminal Output Walkthrough: Analyzing Real SYN Scan Results", duration: "19:15", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 5: UDP Scanning (-sU) & Connectionless Recon",
+        lectures: [
+          { title: "UDP Protocol Scanning Architecture & Connectionless Caveats", duration: "25:40", freePreview: true },
+          { title: "Terminal Output Walkthrough: Analyzing Real UDP Scan Results", duration: "18:20", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 6: Ping Scan (-sn) & Subnet Host Discovery",
+        lectures: [
+          { title: "Ping Scan / No-Port Scan (-sn / -sP) Mechanics & Subnet Sweeps", duration: "21:30", freePreview: true },
+          { title: "Terminal Output Walkthrough: Host Discovery Scan Output", duration: "16:40", freePreview: true }
+        ]
+      },
+      {
+        sectionTitle: "Module 7: Port States, Diagnostic Matrix & Pentesting Best Practices",
+        lectures: [
+          { title: "The 6 Port States Explained: Open, Closed, Filtered & Ambiguous States", duration: "29:30", freePreview: true },
+          { title: "Best Practices: Timing Templates (-T0 to -T5), Output Formats & Safe Scanning", duration: "26:40", freePreview: true }
+        ]
+      }
+    ],
+    faqs: [
+      {
+        question: "What is Nmap and why is it essential in cybersecurity?",
+        answer: "Nmap is an open-source network scanner that identifies active hosts, open ports, running services, and operating system signatures. It forms the foundational reconnaissance step in both offensive penetration testing and defensive vulnerability auditing."
+      },
+      {
+        question: "What is the difference between a TCP Connect scan (-sT) and a SYN Stealth scan (-sS)?",
+        answer: "A TCP Connect scan completes the full 3-way handshake using the OS connect() socket API and works without root privileges, but creates application connection logs. A SYN Stealth scan sends raw SYN packets, receives SYN-ACK, and immediately resets the connection with RST, bypassing standard application logging and completing scans faster."
+      },
+      {
+        question: "Why does a UDP scan take much longer than a TCP scan?",
+        answer: "UDP is connectionless and does not send positive acknowledgments for open ports. When probing closed ports, the operating system throttles ICMP Port Unreachable error packets to roughly 1 per second (RFC 1812 rate limiting), causing UDP sweeps to take significantly longer unless tuned with port filters."
+      },
+      {
+        question: "What does a Filtered port state mean in Nmap output?",
+        answer: "Filtered means a firewall, packet filter, or network router blocked Nmap's probe packets from reaching the port or dropped the reply. Because no response packet or an ICMP unreachable error was returned, Nmap cannot verify whether the port is open or closed."
+      },
+      {
+        question: "Can I practice Nmap legally on the internet?",
+        answer: "Yes, you can scan official test targets like scanme.nmap.org (provided by the Nmap authors for testing purposes) or your own local virtual lab environments (VirtualBox, VMware, Docker) where you have explicit permission."
+      }
+    ]
+  },
+  {
     slug: "computer-networking",
     title: "Computer Networking for Cyber Security",
     subtitle: "The Complete Networking Blueprint for Ethical Hackers & Security Analysts",
