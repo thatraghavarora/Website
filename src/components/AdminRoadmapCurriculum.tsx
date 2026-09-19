@@ -21,8 +21,10 @@ import {
   ChevronDown,
   ChevronUp,
   Cpu,
-  Download
+  Download,
+  BookOpen
 } from "lucide-react";
+import ChapterRoadmapViewer from "@/components/ChapterRoadmapViewer";
 import {
   deepNetworkingTopics,
   deepKaliCommands,
@@ -34,7 +36,7 @@ import {
   DeepBugItem
 } from "@/data/deepRoadmapData";
 
-type SubTab = "networking" | "kali" | "osint" | "tools" | "bugs" | "ctf" | "certificate";
+type SubTab = "chapters" | "networking" | "kali" | "osint" | "tools" | "bugs" | "ctf" | "certificate";
 
 interface AdminRoadmapCurriculumProps {
   completedItems?: string[];
@@ -47,7 +49,7 @@ export default function AdminRoadmapCurriculum({
   onToggleItem,
   syncStatus,
 }: AdminRoadmapCurriculumProps = {}) {
-  const [currentSubTab, setCurrentSubTab] = useState<SubTab>("networking");
+  const [currentSubTab, setCurrentSubTab] = useState<SubTab>("chapters");
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
   // Search & Filters for Tools
@@ -194,6 +196,7 @@ export default function AdminRoadmapCurriculum({
       {/* ══ SUB-NAVIGATION PILLS ════════════════════════════════════════ */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
+          { id: "chapters", label: "🔥 10 Chapters Masterclass", icon: BookOpen },
           { id: "networking", label: "1. Networking Deep-Dive", icon: Globe },
           { id: "kali", label: "2. Kali Linux & CLI", icon: Terminal },
           { id: "osint", label: "3. OSINT Reconnaissance", icon: Search },
@@ -220,6 +223,17 @@ export default function AdminRoadmapCurriculum({
           );
         })}
       </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* 0. 10 CHAPTERS MASTERCLASS                                      */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {currentSubTab === "chapters" && (
+        <ChapterRoadmapViewer
+          completedItems={completedItems}
+          onToggleItem={onToggleItem}
+          syncStatus={syncStatus}
+        />
+      )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* 1. NETWORKING DEEP DIVE                                         */}

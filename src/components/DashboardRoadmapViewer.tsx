@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { RoadmapItem } from "@/data/roadmapData";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
+import ChapterRoadmapViewer from "@/components/ChapterRoadmapViewer";
 
 interface DashboardRoadmapViewerProps {
   roadmap: RoadmapItem;
@@ -39,7 +40,7 @@ export default function DashboardRoadmapViewer({
   onBack,
   onRequestBuy,
 }: DashboardRoadmapViewerProps) {
-  const [activeTab, setActiveTab] = useState<"phases" | "deep_curriculum">("phases");
+  const [activeTab, setActiveTab] = useState<"chapters" | "phases" | "deep_curriculum">("chapters");
   const [expandedPhases, setExpandedPhases] = useState<Record<number, boolean>>({ 0: true, 1: true });
   const [completedItems, setCompletedItems] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
@@ -258,29 +259,51 @@ export default function DashboardRoadmapViewer({
         {/* View Switcher Sub-Tabs inside LMS */}
         <div className="pt-2 flex items-center gap-2 overflow-x-auto scrollbar-none">
           <button
+            onClick={() => setActiveTab("chapters")}
+            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
+              activeTab === "chapters"
+                ? "bg-amber-300 text-black shadow-brutal"
+                : "bg-white text-neutral-700 hover:bg-neutral-50"
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-black" />
+            <span>🔥 1. Chapter Masterclass (10 Deep Chapters & Labs)</span>
+          </button>
+          <button
             onClick={() => setActiveTab("phases")}
-            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs ${
+            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
               activeTab === "phases"
                 ? "bg-amber-300 text-black shadow-brutal"
                 : "bg-white text-neutral-700 hover:bg-neutral-50"
             }`}
           >
             <Map className="w-4 h-4" />
-            <span>1. Phase Checklists ({completedPhaseCount}/{totalPhaseChecklist.length})</span>
+            <span>2. Phase Checklists ({completedPhaseCount}/{totalPhaseChecklist.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("deep_curriculum")}
-            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs ${
+            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
               activeTab === "deep_curriculum"
                 ? "bg-amber-300 text-black shadow-brutal"
                 : "bg-white text-neutral-700 hover:bg-neutral-50"
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>2. In-Depth Masterclass Resources (53+ Tools, 105+ Bugs, Kali, OSINT, Labs &amp; Cert)</span>
+            <span>3. Tools & Bugs Matrix (53+ Tools, 105+ Bugs)</span>
           </button>
         </div>
       </div>
+
+      {/* ══ VIEW 0: CHAPTER-WISE MASTERCLASS ═══════════════════════════ */}
+      {activeTab === "chapters" && (
+        <ChapterRoadmapViewer
+          completedItems={completedItems}
+          onToggleItem={toggleItemComplete}
+          syncStatus={syncStatus}
+          isUnlocked={isPurchased}
+          onRequestUnlock={onRequestBuy}
+        />
+      )}
 
       {/* ══ VIEW 1: MASTER PHASE CHECKLISTS ════════════════════════════ */}
       {activeTab === "phases" && (

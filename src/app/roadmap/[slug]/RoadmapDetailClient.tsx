@@ -27,6 +27,7 @@ import {
 import confetti from "canvas-confetti";
 import { RoadmapItem } from "@/data/roadmapData";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
+import ChapterRoadmapViewer from "@/components/ChapterRoadmapViewer";
 import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
 
 const PHASE_BADGE_COLORS: Record<string, string> = {
@@ -49,6 +50,9 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
   const [isPurchased, setIsPurchased] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [expandedPhase, setExpandedPhase] = useState<number | null>(0);
+  const [curriculumTab, setCurriculumTab] = useState<"chapters" | "phases">("chapters");
+  const [completedItems, setCompletedItems] = useState<string[]>([]);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -61,6 +65,11 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
       }
     } catch {}
 
+    try {
+      const stored = localStorage.getItem(`roadmap_completed_${roadmap.slug}`);
+      if (stored) setCompletedItems(JSON.parse(stored));
+    } catch {}
+
     fetch(`/api/purchases?slug=${roadmap.slug}`)
       .then((res) => res.json())
       .then((data) => {
@@ -70,7 +79,48 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
         }
       })
       .catch(() => {});
+
+    fetch(`/api/roadmap/progress?slug=${roadmap.slug}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.completedItems && Array.isArray(data.completedItems)) {
+          setCompletedItems(data.completedItems);
+        }
+      })
+      .catch(() => {});
   }, [roadmap.slug]);
+
+  const toggleItemComplete = async (itemId: string) => {
+    if (!isPurchased) {
+      handleEnroll();
+      return;
+    }
+    setCompletedItems((prev) => {
+      const updated = prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId];
+      try {
+        localStorage.setItem(`roadmap_completed_${roadmap.slug}`, JSON.stringify(updated));
+      } catch {}
+
+      fetch("/api/roadmap/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roadmapSlug: roadmap.slug,
+          completedItems: updated,
+          itemToggled: itemId,
+        }),
+      })
+        .then(() => {
+          setSyncStatus("✓ Saved to DB");
+          setTimeout(() => setSyncStatus(null), 2500);
+        })
+        .catch(() => {});
+
+      return updated;
+    });
+  };
 
   const handleEnroll = () => {
     setIsCashfreeModalOpen(true);
@@ -231,13 +281,53 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                 </div>
               )}
 
-              <div className="flex items-center gap-2.5 mb-2">
-                <Flag className="w-6 h-6 text-purple-600 stroke-[2.5]" />
-                <h2 className="text-2xl sm:text-3xl font-black text-black font-display">Your 6-Phase Roadmap</h2>
-              </div>
-              <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-8">
-                A clear, structured journey from day one to professional level. Each phase builds on the last — no confusion, no wasted time.
-              </p>
+              {/* View Switcher for Deep Chapter Curriculum vs 6-Phase Overview */}
+              {roadmap.slug === "web-pentesting-cyber-security" && (
+                <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-1 scrollbar-none">
+                  <button
+                    onClick={() => setCurriculumTab("chapters")}
+                    className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+                      curriculumTab === "chapters"
+                        ? "bg-amber-300 text-black shadow-brutal"
+                        : "bg-white text-neutral-700 hover:bg-neutral-50 shadow-brutal-xs"
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4 text-black" />
+                    <span>🔥 10 Chapters Masterclass (Lessons, Commands &amp; Labs)</span>
+                  </button>
+                  <button
+                    onClick={() => setCurriculumTab("phases")}
+                    className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+                      curriculumTab === "phases"
+                        ? "bg-amber-300 text-black shadow-brutal"
+                        : "bg-white text-neutral-700 hover:bg-neutral-50 shadow-brutal-xs"
+                    }`}
+                  >
+                    <Flag className="w-4 h-4 text-black" />
+                    <span>📋 6-Phase Roadmap Overview</span>
+                  </button>
+                </div>
+              )}
+
+              {curriculumTab === "chapters" && roadmap.slug === "web-pentesting-cyber-security" ? (
+                <div className="space-y-6">
+                  <ChapterRoadmapViewer
+                    completedItems={completedItems}
+                    onToggleItem={toggleItemComplete}
+                    isUnlocked={isPurchased}
+                    onRequestUnlock={handleEnroll}
+                    syncStatus={syncStatus}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <Flag className="w-6 h-6 text-purple-600 stroke-[2.5]" />
+                    <h2 className="text-2xl sm:text-3xl font-black text-black font-display">Your 6-Phase Roadmap</h2>
+                  </div>
+                  <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-8">
+                    A clear, structured journey from day one to professional level. Each phase builds on the last — no confusion, no wasted time.
+                  </p>
 
               <div className="space-y-4">
                 {roadmap.phases.map((phase, idx) => {
@@ -370,6 +460,8 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                   </button>
                 </div>
               )}
+            </>
+          )}
 
               {/* EMBEDDED DEEP CURRICULUM (WHEN UNLOCKED) */}
               {mounted && isPurchased && roadmap.slug === "web-pentesting-cyber-security" && (
