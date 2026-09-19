@@ -225,12 +225,18 @@ function DesktopSidebar({
       {/* Logout in Desktop Sidebar */}
       <div className="p-3 pt-0 mb-4 shrink-0">
         <button
-          onClick={() => logoutUser()}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800/80 transition-all shadow-brutal-xs cursor-pointer"
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            logoutUser();
+          }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800/80 transition-all shadow-brutal-xs cursor-pointer active:scale-95 touch-manipulation"
           title="Sign out of student account"
+          id="dashboard-sidebar-logout-btn"
         >
-          <LogOut className="w-4 h-4 text-rose-400" />
-          <span>Sign Out</span>
+          <LogOut className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>Log Out</span>
         </button>
       </div>
     </aside>
@@ -246,14 +252,15 @@ function MobileBottomNav({
   onSelect: (t: Tab) => void;
 }) {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-[3px] border-black px-2 py-2 flex items-center justify-around shadow-brutal">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t-[3px] border-black px-1.5 py-1.5 flex items-center justify-around shadow-brutal">
       {navItems.map(({ label, shortLabel, tab, icon: Icon }) => {
         const isActive = active === tab;
         return (
           <button
             key={tab}
+            type="button"
             onClick={() => onSelect(tab)}
-            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all ${
               isActive
                 ? "bg-yellow-300 text-black border-2 border-black shadow-brutal-xs font-black scale-105"
                 : "text-neutral-600 hover:text-black font-bold"
@@ -265,6 +272,20 @@ function MobileBottomNav({
           </button>
         );
       })}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          logoutUser();
+        }}
+        className="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-rose-600 hover:text-rose-800 font-black transition-all active:scale-95 cursor-pointer touch-manipulation"
+        title="Log Out"
+        id="mobile-bottom-logout-btn"
+      >
+        <LogOut className="w-5 h-5 mb-0.5 text-rose-600" />
+        <span className="text-[10px] leading-none tracking-tight font-black">Logout</span>
+      </button>
     </nav>
   );
 }
@@ -2326,24 +2347,19 @@ function SettingsTab() {
           </div>
         </div>
 
-        {/* Logout */}
+        {/* Logout in Settings Tab */}
         <button
-          onClick={async () => {
-            try {
-              await fetch("/api/auth", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "logout" }),
-              });
-            } catch {}
-            try {
-              localStorage.clear();
-            } catch {}
-            window.location.href = "/login";
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            logoutUser();
           }}
-          className="w-full py-3 rounded-xl border-2 border-black bg-black text-yellow-300 font-black text-sm hover:bg-neutral-800 transition-colors shadow-brutal-sm cursor-pointer"
+          className="w-full py-3.5 rounded-xl border-2 border-black bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-black text-sm flex items-center justify-center gap-2 transition-all shadow-brutal hover:shadow-brutal-sm active:scale-95 cursor-pointer touch-manipulation"
+          id="settings-tab-logout-btn"
         >
-          Log Out
+          <LogOut className="w-4 h-4 text-white" />
+          <span>Log Out</span>
         </button>
       </div>
     </div>
@@ -2544,17 +2560,23 @@ export default function DashboardPage() {
           {/* Right: Logout + Avatar */}
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => logoutUser()}
-              className="px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 text-rose-900 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm transition-all cursor-pointer"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                logoutUser();
+              }}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 active:bg-rose-300 text-rose-950 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm active:scale-95 transition-all cursor-pointer touch-manipulation z-30"
               title="Sign out of student account"
               id="dashboard-header-logout-btn"
             >
-              <LogOut className="w-3.5 h-3.5 text-rose-700" />
-              <span className="hidden sm:inline">Log Out</span>
+              <LogOut className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+              <span className="inline">Log Out</span>
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab("settings")}
-              className="w-10 h-10 rounded-xl border-2 border-black overflow-hidden shadow-brutal-xs bg-yellow-300 hover:bg-yellow-400 flex items-center justify-center transition-all hover:-translate-y-0.5 cursor-pointer"
+              className="w-10 h-10 rounded-xl border-2 border-black overflow-hidden shadow-brutal-xs bg-yellow-300 hover:bg-yellow-400 flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer"
               title="User Profile & Settings"
             >
               <span className="font-display font-black text-base text-black">R</span>

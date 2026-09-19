@@ -111,12 +111,18 @@ export default function DashboardRoadmapStandalonePage() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => logoutUser()}
-              className="px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 text-rose-900 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm transition-all cursor-pointer"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                logoutUser();
+              }}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 active:bg-rose-300 text-rose-950 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm active:scale-95 transition-all cursor-pointer touch-manipulation z-30"
               title="Sign out of student account"
+              id="roadmap-header-logout-btn"
             >
-              <LogOut className="w-3.5 h-3.5 text-rose-700" />
-              <span className="hidden sm:inline">Log Out</span>
+              <LogOut className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+              <span className="inline">Log Out</span>
             </button>
             <span className="px-3 py-1 rounded-xl bg-purple-200 text-purple-900 border-2 border-black font-black text-xs uppercase shadow-brutal-xs">
               Student Study Portal
