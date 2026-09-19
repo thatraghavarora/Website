@@ -30,17 +30,6 @@ import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 import ChapterRoadmapViewer from "@/components/ChapterRoadmapViewer";
 import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
 
-const PHASE_BADGE_COLORS: Record<string, string> = {
-  "Beginner": "bg-emerald-100 text-emerald-800 border-emerald-300",
-  "Beginner to Intermediate": "bg-blue-100 text-blue-800 border-blue-300",
-  "Beginner → Intermediate": "bg-blue-100 text-blue-800 border-blue-300",
-  "Intermediate": "bg-purple-100 text-purple-800 border-purple-300",
-  "Intermediate to Advanced": "bg-orange-100 text-orange-800 border-orange-300",
-  "Intermediate → Advanced": "bg-orange-100 text-orange-800 border-orange-300",
-  "Advanced": "bg-red-100 text-red-800 border-red-300",
-  "Mastery & Career": "bg-yellow-100 text-yellow-800 border-yellow-300",
-};
-
 export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem }) {
   const [isCashfreeModalOpen, setIsCashfreeModalOpen] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
@@ -49,8 +38,6 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [isPurchased, setIsPurchased] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [expandedPhase, setExpandedPhase] = useState<number | null>(0);
-  const [curriculumTab, setCurriculumTab] = useState<"chapters" | "phases">("chapters");
   const [completedItems, setCompletedItems] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
@@ -68,7 +55,6 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
       .then((data) => {
         if (data.isUnlocked) {
           setIsPurchased(true);
-          setExpandedPhase(0);
           try {
             localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
           } catch {}
@@ -133,7 +119,6 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
   const handleCashfreeSuccess = (details: { orderId: string; email: string }) => {
     setIsPurchased(true);
-    setExpandedPhase(0);
     try {
       localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
     } catch {}
@@ -151,7 +136,6 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
     const utrNumber = utrInput.trim() || `UTR-${Date.now()}`;
 
     setIsPurchased(true);
-    setExpandedPhase(0);
     try {
       localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
     } catch {}
@@ -213,11 +197,11 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Layers className="w-4 h-4 text-purple-600" />
-                  <span>{roadmap.modulesCount} Master Phases</span>
+                  <span>10 Master Chapters</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-blue-600" />
-                  <span>10+ Curated Labs & Tools</span>
+                  <span>60+ Deep Lessons &amp; Labs</span>
                 </div>
               </div>
 
@@ -239,7 +223,7 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                 <h2 className="text-2xl sm:text-3xl font-black text-white font-display">What You Can Become</h2>
               </div>
               <p className="text-sm font-medium text-neutral-400 mb-8">
-                This is not just a roadmap — it is a career transformation. Here is exactly what you will be able to call yourself after completing all 6 phases:
+                This is not just a roadmap — it is a career transformation. Here is exactly what you will be able to call yourself after completing this curriculum:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(roadmap.whatYouBecome ?? [
@@ -261,232 +245,15 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
               </div>
             </div>
 
-            {/* ══ 2. ROADMAP PHASES (Teaser — deep content locked) ══ */}
-            <div id="roadmap-curriculum-section" className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal scroll-mt-24">
-              {mounted && isPurchased && (
-                <div className="mb-6 p-4 rounded-2xl border-[2.5px] border-black bg-emerald-300 text-black shadow-brutal-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-6 h-6 text-black shrink-0" />
-                    <div>
-                      <p className="font-black text-sm uppercase tracking-wide">Roadmap Unlocked &amp; Ready</p>
-                      <p className="text-xs font-bold text-neutral-900">
-                        Lifetime Access Active! All 6 phases, 53+ tools, 105+ bugs &amp; verifiable certificate are open below.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => setExpandedPhase(expandedPhase === null ? 0 : null)}
-                      className="px-3 py-1.5 rounded-xl border-2 border-black bg-white text-black font-black text-xs uppercase hover:bg-neutral-100 shadow-brutal-xs"
-                    >
-                      {expandedPhase !== null ? "Collapse Phases" : "Expand Phase 1"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* View Switcher for Deep Chapter Curriculum vs 6-Phase Overview */}
-              {roadmap.slug === "web-pentesting-cyber-security" && (
-                <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-1 scrollbar-none">
-                  <button
-                    onClick={() => setCurriculumTab("chapters")}
-                    className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
-                      curriculumTab === "chapters"
-                        ? "bg-amber-300 text-black shadow-brutal"
-                        : "bg-white text-neutral-700 hover:bg-neutral-50 shadow-brutal-xs"
-                    }`}
-                  >
-                    <BookOpen className="w-4 h-4 text-black" />
-                    <span>🔥 10 Chapters Masterclass (Lessons, Commands &amp; Labs)</span>
-                  </button>
-                  <button
-                    onClick={() => setCurriculumTab("phases")}
-                    className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
-                      curriculumTab === "phases"
-                        ? "bg-amber-300 text-black shadow-brutal"
-                        : "bg-white text-neutral-700 hover:bg-neutral-50 shadow-brutal-xs"
-                    }`}
-                  >
-                    <Flag className="w-4 h-4 text-black" />
-                    <span>📋 6-Phase Roadmap Overview</span>
-                  </button>
-                </div>
-              )}
-
-              {curriculumTab === "chapters" && roadmap.slug === "web-pentesting-cyber-security" ? (
-                <div className="space-y-6">
-                  <ChapterRoadmapViewer
-                    completedItems={completedItems}
-                    onToggleItem={toggleItemComplete}
-                    isUnlocked={isPurchased}
-                    onRequestUnlock={handleEnroll}
-                    syncStatus={syncStatus}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <Flag className="w-6 h-6 text-purple-600 stroke-[2.5]" />
-                    <h2 className="text-2xl sm:text-3xl font-black text-black font-display">Your 6-Phase Roadmap</h2>
-                  </div>
-                  <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-8">
-                    A clear, structured journey from day one to professional level. Each phase builds on the last — no confusion, no wasted time.
-                  </p>
-
-              <div className="space-y-4">
-                {roadmap.phases.map((phase, idx) => {
-                  const badgeClass = PHASE_BADGE_COLORS[phase.badge] ?? "bg-neutral-100 text-neutral-700 border-neutral-300";
-                  const isExpanded = expandedPhase === idx;
-                  const hasDeepContent = (phase.topics?.length ?? 0) > 0 || (phase.handsOnGoals?.length ?? 0) > 0;
-
-                  return (
-                    <div
-                      key={idx}
-                      className="rounded-2xl border-2 border-black overflow-hidden shadow-brutal-xs"
-                    >
-                      {/* Phase Header — always visible */}
-                      <button
-                        onClick={() => setExpandedPhase(isExpanded ? null : idx)}
-                        className="w-full flex items-start gap-4 p-5 bg-white hover:bg-neutral-50 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-xl border-2 border-black bg-black text-white flex items-center justify-center shrink-0 font-black text-sm">
-                          {phase.phaseNumber}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black uppercase tracking-wider ${badgeClass}`}>
-                              {phase.badge}
-                            </span>
-                            <span className="text-[11px] font-bold text-neutral-500">{phase.duration}</span>
-                          </div>
-                          <p className="font-display font-black text-sm sm:text-base text-black leading-snug">{phase.title}</p>
-                          <p className="text-xs font-medium text-neutral-600 mt-1.5 leading-relaxed">{phase.description}</p>
-                        </div>
-                        <div className="shrink-0 mt-1">
-                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </div>
-                      </button>
-
-                      {/* Expanded: Deep content — locked unless purchased */}
-                      {isExpanded && hasDeepContent && (
-                        <div className="border-t-2 border-black">
-                          {!isPurchased ? (
-                            /* LOCKED STATE */
-                            <div className="p-6 bg-neutral-950 text-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-yellow-300 border-2 border-black flex items-center justify-center">
-                                  <Lock className="w-5 h-5 text-black" />
-                                </div>
-                                <div>
-                                  <p className="font-black text-sm">Full Phase {phase.phaseNumber} Content is Locked</p>
-                                  <p className="text-xs text-neutral-400 font-medium">
-                                    {phase.topics?.length ?? 0} topics + {phase.handsOnGoals?.length ?? 0} hands-on lab goals inside
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Blurred topic previews */}
-                              <div className="space-y-2 mb-5">
-                                {(phase.topics ?? []).slice(0, 4).map((t, i) => (
-                                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10">
-                                    <Check className="w-3.5 h-3.5 text-yellow-300 shrink-0" />
-                                    <span className="text-xs font-bold text-white/30 blur-[3px] select-none">{t}</span>
-                                  </div>
-                                ))}
-                                {(phase.topics?.length ?? 0) > 4 && (
-                                  <p className="text-xs text-neutral-500 text-center font-bold pt-1">
-                                    + {(phase.topics?.length ?? 0) - 4} more topics hidden...
-                                  </p>
-                                )}
-                              </div>
-
-                              <button
-                                onClick={handleEnroll}
-                                className="w-full py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black font-black text-sm uppercase tracking-wide hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
-                              >
-                                <Unlock className="w-4 h-4" />
-                                Unlock Full Roadmap — {roadmap.price}
-                              </button>
-                            </div>
-                          ) : (
-                            /* UNLOCKED STATE */
-                            <div className="p-6 bg-neutral-50 space-y-6">
-                              {(phase.topics?.length ?? 0) > 0 && (
-                                <div>
-                                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-500 mb-3 flex items-center gap-1.5">
-                                    <BookOpen className="w-3.5 h-3.5" /> Topics Covered
-                                  </p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {phase.topics!.map((t, i) => (
-                                      <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl border border-neutral-200 bg-white">
-                                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5 stroke-[3]" />
-                                        <span className="text-xs font-bold text-neutral-800 leading-snug">{t}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {(phase.handsOnGoals?.length ?? 0) > 0 && (
-                                <div>
-                                  <p className="text-[11px] font-black uppercase tracking-wider text-neutral-500 mb-3 flex items-center gap-1.5">
-                                    <Target className="w-3.5 h-3.5" /> Hands-On Goals
-                                  </p>
-                                  <div className="space-y-2">
-                                    {phase.handsOnGoals!.map((g, i) => (
-                                      <div key={i} className="flex items-start gap-2 p-3 rounded-xl border-2 border-black bg-yellow-50">
-                                        <Zap className="w-3.5 h-3.5 text-yellow-600 shrink-0 mt-0.5" />
-                                        <span className="text-xs font-bold text-black leading-snug">{g}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* CTA below phases */}
-              {mounted && !isPurchased && (
-                <div className="mt-6 p-5 rounded-2xl border-2 border-black bg-neutral-950 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div>
-                    <p className="font-black text-sm text-yellow-300">Unlock all 6 phases with full topics + hands-on goals</p>
-                    <p className="text-xs font-bold text-neutral-400 mt-0.5">
-                      80+ topics, lab goals, YouTube recommendations, bug bounty guide &amp; more
-                    </p>
-                  </div>
-                  <button onClick={handleEnroll} className="btn-brutal btn-brutal-yellow shrink-0 px-5 py-2.5 text-sm font-black whitespace-nowrap">
-                    Get Full Access — {roadmap.price}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-              {/* EMBEDDED DEEP CURRICULUM (WHEN UNLOCKED) */}
-              {mounted && isPurchased && roadmap.slug === "web-pentesting-cyber-security" && (
-                <div className="mt-10 pt-8 border-t-[3px] border-black space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-300 border-2 border-black flex items-center justify-center shadow-brutal-xs">
-                      <Layers className="w-5 h-5 text-black stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-black text-black font-display uppercase">
-                        Paid Masterclass Deep Curriculum &amp; Tools Matrix
-                      </h2>
-                      <p className="text-xs font-bold text-neutral-600">
-                        Full access unlocked: in-depth networking notes, Kali commands, OSINT framework, 53+ tools, 105+ bugs, CTF platforms, and certificate studio.
-                      </p>
-                    </div>
-                  </div>
-
-                  <AdminRoadmapCurriculum />
-                </div>
-              )}
+            {/* ══ 2. ROADMAP CURRICULUM (Chapters & Interactive Docs) ══ */}
+            <div id="roadmap-curriculum-section" className="scroll-mt-24">
+              <ChapterRoadmapViewer
+                completedItems={completedItems}
+                onToggleItem={toggleItemComplete}
+                isUnlocked={isPurchased}
+                onRequestUnlock={handleEnroll}
+                syncStatus={syncStatus}
+              />
             </div>
 
             {/* ══ 3. WHAT'S INCLUDED ══ */}
@@ -602,8 +369,8 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                   </div>
                   <div className="space-y-2">
                     {[
-                      "80+ deep-dive topics across 6 phases",
-                      "Hands-on lab goals per phase",
+                      "60+ deep-dive lessons across 10 master chapters",
+                      "Hands-on practical lab attack challenges",
                       "Best YouTube channels (curated & ranked)",
                       "10+ practice lab platforms with tips",
                       "Bug bounty platform selection guide",

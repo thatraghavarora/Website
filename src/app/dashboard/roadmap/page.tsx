@@ -191,8 +191,8 @@ export default function DashboardRoadmapStandalonePage() {
 
                       <div className="flex items-center justify-between text-xs font-bold text-neutral-600 mb-4">
                         <span className="flex items-center gap-1 font-mono">
-                          <Map className="w-3.5 h-3.5" />
-                          {r.modulesCount} Master Phases
+                          <BookOpen className="w-3.5 h-3.5" />
+                          10 Master Chapters
                         </span>
                         <span className="flex items-center gap-1">
                           <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />

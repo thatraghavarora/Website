@@ -490,8 +490,8 @@ function RoadmapPurchaseModal({
               {roadmap.originalPrice}
             </span>
           </div>
-          <p className="text-[11px] font-bold text-neutral-800 mt-1">
-            Unlocks all 6 master phases, 80+ curated topics, lab goals & resource links
+          <p className="text-xs text-neutral-600 font-bold mb-5">
+            Unlocks all 10 master chapters, 60+ lessons, lab goals &amp; attack methodologies
           </p>
         </div>
 
@@ -1366,7 +1366,7 @@ function HomeTab({
 
                 <div className="pt-3 border-t-2 border-neutral-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-neutral-600 flex items-center gap-1">
-                    <Map className="w-3.5 h-3.5 text-black" /> {r.modulesCount} Master Phases
+                    <BookOpen className="w-3.5 h-3.5 text-black" /> 10 Master Chapters
                   </span>
                   <button
                     onClick={() => onSelectRoadmap(r)}
@@ -1471,7 +1471,7 @@ function HomeTab({
                 Web Pentesting Roadmap
               </h3>
               <p className="text-xs font-bold text-neutral-600 mb-4 leading-snug">
-                6 structured master phases, 80+ topics, hands-on lab goals & bug bounty guides.
+                10 structured master chapters, 60+ lessons, hands-on lab goals &amp; bug bounty guides.
               </p>
               <button
                 onClick={() => onRequestBuyRoadmap(roadmaps[0])}
@@ -1780,9 +1780,9 @@ function RoadmapTab({
 
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3 text-xs font-bold text-neutral-600">
-                    <span className="flex items-center gap-1">
-                      <Map className="w-3.5 h-3.5" />
-                      {r.modulesCount} phases
+                    <span className="flex items-center gap-1 font-mono">
+                      <BookOpen className="w-3.5 h-3.5" />
+                      10 Chapters
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -1802,7 +1802,7 @@ function RoadmapTab({
                   <div className="flex-1 flex items-center gap-1.5 p-2 rounded-xl border border-emerald-300 bg-emerald-50">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span className="text-[11px] font-bold text-emerald-800">
-                      All 6 Phases Unlocked
+                      All 10 Chapters Unlocked
                     </span>
                   </div>
                   <button
