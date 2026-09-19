@@ -250,8 +250,172 @@ export default function HireMePage() {
         <section className="mb-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
             
-            {/* ── LEFT COLUMN: LEAD CAPTURE FORM (5 cols) ── */}
-            <div className="lg:col-span-5 order-2 lg:order-1">
+            {/* ── LEFT COLUMN: HERO CONTENT & VALUE PROPOSITION (7 cols) ── */}
+            <div className="lg:col-span-7 space-y-6 order-1 lg:order-1">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black bg-yellow-300 shadow-brutal-sm font-black text-xs uppercase tracking-wider text-black">
+                <Sparkles className="w-4 h-4" />
+                <span>DIRECT COLLABORATION &amp; 1:1 LIVE MENTORSHIP</span>
+              </div>
+
+              {/* Display Headline */}
+              <div>
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-black font-display tracking-tight leading-tight">
+                  Work With Raghav Arora.
+                </h1>
+                <p className="text-base sm:text-xl font-bold text-neutral-700 mt-3 leading-relaxed">
+                  Fast-track your tech career with personalized 1:1 live strategy calls, or hire me to build world-class web apps, audit your cybersecurity posture, craft high-CTR designs, and drive organic digital growth.
+                </p>
+              </div>
+
+              {/* Pricing Notice Callout Card */}
+              <div className="rounded-2xl border-[3px] border-black bg-amber-100/90 p-5 shadow-brutal-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-black text-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-display font-black text-sm text-black uppercase tracking-wider">
+                      Transparent Pricing Philosophy:
+                    </h4>
+                    <p className="text-xs sm:text-sm font-bold text-neutral-800 mt-1 leading-snug">
+                      • <strong>1:1 Live Guidance Calls:</strong> Fixed transparent fees (<span className="text-purple-900 font-extrabold">$10 / ₹1,000 INR</span> for Cyber Security, <span className="text-blue-900 font-extrabold">$5 / ₹500 INR</span> for Web Dev &amp; Marketing).<br />
+                      • <strong>Freelance &amp; Contract Work:</strong> Depend upon work fees will charge — tailored to your exact project scope and technical complexity.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Overview Pills (Quick Selection Grid) */}
+              <div className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-wider text-neutral-500">
+                  What I Can Help You With (Click to Select in Form):
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Item 1 */}
+                  <div
+                    onClick={() => handleSelectService("cyber-guidance", "1:1 Cyber Security Guidance ($10 / ₹1,000 INR)", "mentorship")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-purple-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 border border-black flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4 text-purple-700" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Cyber Security 1:1 Call</p>
+                        <p className="text-[11px] font-extrabold text-purple-700">$10 USD / ₹1,000 INR</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+
+                  {/* Item 2 */}
+                  <div
+                    onClick={() => handleSelectService("webdev-guidance", "1:1 Web Development Guidance ($5 / ₹500 INR)", "mentorship")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-blue-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 border border-black flex items-center justify-center shrink-0">
+                        <Code2 className="w-4 h-4 text-blue-700" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Web Dev 1:1 Call</p>
+                        <p className="text-[11px] font-extrabold text-blue-700">$5 USD / ₹500 INR</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+
+                  {/* Item 3 */}
+                  <div
+                    onClick={() => handleSelectService("marketing-guidance", "1:1 Digital Marketing Guidance ($5 / ₹500 INR)", "mentorship")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-emerald-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-black flex items-center justify-center shrink-0">
+                        <TrendingUp className="w-4 h-4 text-emerald-700" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Digital Marketing 1:1</p>
+                        <p className="text-[11px] font-extrabold text-emerald-700">$5 USD / ₹500 INR</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+
+                  {/* Item 4 */}
+                  <div
+                    onClick={() => handleSelectService("hire-webdev", "Hire Me As Web Developer (Custom Scope)", "freelance")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-yellow-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-yellow-100 border border-black flex items-center justify-center shrink-0">
+                        <Code2 className="w-4 h-4 text-black" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Hire Web Developer</p>
+                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+
+                  {/* Item 5 */}
+                  <div
+                    onClick={() => handleSelectService("hire-pentester", "Hire Me As Pentester (Security Audit)", "freelance")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-purple-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 border border-black flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-4 h-4 text-purple-700" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Hire Pentester (VAPT)</p>
+                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+
+                  {/* Item 6 */}
+                  <div
+                    onClick={() => handleSelectService("hire-designer", "Hire Me As Graphic Designer (Custom Scope)", "freelance")}
+                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-amber-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 border border-black flex items-center justify-center shrink-0">
+                        <Palette className="w-4 h-4 text-amber-700" />
+                      </div>
+                      <div>
+                        <p className="font-display font-black text-xs text-black">Hire Graphic Designer</p>
+                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Trust Highlights */}
+              <div className="grid grid-cols-3 gap-3 pt-2">
+                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
+                  <p className="font-display font-black text-xl text-black">50+</p>
+                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Orgs Secured</p>
+                </div>
+                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
+                  <p className="font-display font-black text-xl text-black">1000+</p>
+                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Students Taught</p>
+                </div>
+                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
+                  <p className="font-display font-black text-xl text-black">100%</p>
+                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Live Screen Share</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── RIGHT COLUMN: LEAD CAPTURE FORM (5 cols) ── */}
+            <div className="lg:col-span-5 order-2 lg:order-2">
               <div
                 id="lead-capture-form"
                 className="rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-8 shadow-brutal-xl relative overflow-hidden"
@@ -536,172 +700,9 @@ export default function HireMePage() {
                 </div>
               </div>
             </div>
-
-            {/* ── RIGHT COLUMN: HERO CONTENT & VALUE PROPOSITION (7 cols) ── */}
-            <div className="lg:col-span-7 space-y-6 order-1 lg:order-2">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-black bg-yellow-300 shadow-brutal-sm font-black text-xs uppercase tracking-wider text-black">
-                <Sparkles className="w-4 h-4" />
-                <span>DIRECT COLLABORATION &amp; 1:1 LIVE MENTORSHIP</span>
-              </div>
-
-              {/* Display Headline */}
-              <div>
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-black font-display tracking-tight leading-tight">
-                  Work With Raghav Arora.
-                </h1>
-                <p className="text-base sm:text-xl font-bold text-neutral-700 mt-3 leading-relaxed">
-                  Fast-track your tech career with personalized 1:1 live strategy calls, or hire me to build world-class web apps, audit your cybersecurity posture, craft high-CTR designs, and drive organic digital growth.
-                </p>
-              </div>
-
-              {/* Pricing Notice Callout Card */}
-              <div className="rounded-2xl border-[3px] border-black bg-amber-100/90 p-5 shadow-brutal-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-black text-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
-                    <DollarSign className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-display font-black text-sm text-black uppercase tracking-wider">
-                      Transparent Pricing Philosophy:
-                    </h4>
-                    <p className="text-xs sm:text-sm font-bold text-neutral-800 mt-1 leading-snug">
-                      • <strong>1:1 Live Guidance Calls:</strong> Fixed transparent fees (<span className="text-purple-900 font-extrabold">$10 / ₹1,000 INR</span> for Cyber Security, <span className="text-blue-900 font-extrabold">$5 / ₹500 INR</span> for Web Dev &amp; Marketing).<br />
-                      • <strong>Freelance &amp; Contract Work:</strong> Depend upon work fees will charge — tailored to your exact project scope and technical complexity.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Overview Pills (Quick Selection Grid) */}
-              <div className="space-y-3">
-                <p className="text-xs font-black uppercase tracking-wider text-neutral-500">
-                  What I Can Help You With (Click to Select in Form):
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Item 1 */}
-                  <div
-                    onClick={() => handleSelectService("cyber-guidance", "1:1 Cyber Security Guidance ($10 / ₹1,000 INR)", "mentorship")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-purple-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 border border-black flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-4 h-4 text-purple-700" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Cyber Security 1:1 Call</p>
-                        <p className="text-[11px] font-extrabold text-purple-700">$10 USD / ₹1,000 INR</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-
-                  {/* Item 2 */}
-                  <div
-                    onClick={() => handleSelectService("webdev-guidance", "1:1 Web Development Guidance ($5 / ₹500 INR)", "mentorship")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-blue-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 border border-black flex items-center justify-center shrink-0">
-                        <Code2 className="w-4 h-4 text-blue-700" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Web Dev 1:1 Call</p>
-                        <p className="text-[11px] font-extrabold text-blue-700">$5 USD / ₹500 INR</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-
-                  {/* Item 3 */}
-                  <div
-                    onClick={() => handleSelectService("marketing-guidance", "1:1 Digital Marketing Guidance ($5 / ₹500 INR)", "mentorship")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-emerald-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-black flex items-center justify-center shrink-0">
-                        <TrendingUp className="w-4 h-4 text-emerald-700" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Digital Marketing 1:1</p>
-                        <p className="text-[11px] font-extrabold text-emerald-700">$5 USD / ₹500 INR</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-
-                  {/* Item 4 */}
-                  <div
-                    onClick={() => handleSelectService("hire-webdev", "Hire Me As Web Developer (Custom Scope)", "freelance")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-yellow-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-yellow-100 border border-black flex items-center justify-center shrink-0">
-                        <Code2 className="w-4 h-4 text-black" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Hire Web Developer</p>
-                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-
-                  {/* Item 5 */}
-                  <div
-                    onClick={() => handleSelectService("hire-pentester", "Hire Me As Pentester (Security Audit)", "freelance")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-purple-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 border border-black flex items-center justify-center shrink-0">
-                        <ShieldAlert className="w-4 h-4 text-purple-700" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Hire Pentester (VAPT)</p>
-                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-
-                  {/* Item 6 */}
-                  <div
-                    onClick={() => handleSelectService("hire-designer", "Hire Me As Graphic Designer (Custom Scope)", "freelance")}
-                    className="p-3.5 rounded-2xl border-2 border-black bg-white hover:bg-amber-50 transition-all cursor-pointer shadow-brutal-xs flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 border border-black flex items-center justify-center shrink-0">
-                        <Palette className="w-4 h-4 text-amber-700" />
-                      </div>
-                      <div>
-                        <p className="font-display font-black text-xs text-black">Hire Graphic Designer</p>
-                        <p className="text-[11px] font-extrabold text-neutral-600">Custom Scope Quote</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-neutral-400 group-hover:text-black transition-colors">Select →</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Trust Highlights */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
-                  <p className="font-display font-black text-xl text-black">50+</p>
-                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Orgs Secured</p>
-                </div>
-                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
-                  <p className="font-display font-black text-xl text-black">1000+</p>
-                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Students Taught</p>
-                </div>
-                <div className="p-3 rounded-2xl border-2 border-black bg-white text-center shadow-brutal-xs">
-                  <p className="font-display font-black text-xl text-black">100%</p>
-                  <p className="text-[10px] font-bold text-neutral-600 uppercase">Live Screen Share</p>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
+
 
         {/* ══════════════════════════════════════════════════════════
             SECTION 2: 1:1 LIVE GUIDANCE SESSIONS DEEP DIVE
