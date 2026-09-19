@@ -688,7 +688,7 @@ export default function HireMePage() {
                       <span>Instagram</span>
                     </a>
                     <a
-                      href="https://twitter.com/raghavarora"
+                      href="https://twitter.com/thatraghavarora"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-2.5 py-1 rounded-lg border border-black bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] font-black flex items-center gap-1"

@@ -113,10 +113,10 @@ export const siteProfile = {
     { title: "Educator", desc: "Mentored 1000+ Students in Tech", icon: "BookOpen" }
   ],
   socials: {
-    linkedin: "https://linkedin.com/in/raghavarora",
+    linkedin: "https://linkedin.com/in/thatraghavarora",
     instagram: "https://instagram.com/thatraghavarora",
-    github: "https://github.com/raghavarora",
-    x: "https://twitter.com/raghavarora",
+    github: "https://github.com/thatraghavarora",
+    x: "https://twitter.com/thatraghavarora",
     youtube: "https://youtube.com/@thatraghavarora",
     email: "contact@thatraghavarora.com"
   }
@@ -214,8 +214,8 @@ export const projects: Project[] = [
     textColor: "text-white",
     darkCard: true,
     featured: true,
-    link: "https://github.com/raghavarora/crypto-whatsapp",
-    github: "https://github.com/raghavarora/crypto-whatsapp",
+    link: "https://github.com/thatraghavarora/crypto-whatsapp",
+    github: "https://github.com/thatraghavarora/crypto-whatsapp",
     stats: [
       { label: "Chains Supported", value: "3+" },
       { label: "Avg Transfer Time", value: "<5 sec" },
@@ -240,8 +240,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#DCFCE7]",
     textColor: "text-black",
     featured: true,
-    link: "https://github.com/raghavarora/whatsapp-auth",
-    github: "https://github.com/raghavarora/whatsapp-auth",
+    link: "https://github.com/thatraghavarora/whatsapp-auth",
+    github: "https://github.com/thatraghavarora/whatsapp-auth",
     stats: [
       { label: "Cost", value: "FREE" },
       { label: "Setup Time", value: "<10 min" },
@@ -267,7 +267,7 @@ export const projects: Project[] = [
     textColor: "text-black",
     featured: true,
     link: "https://healhack.tech",
-    github: "https://github.com/raghavarora/healhack",
+    github: "https://github.com/thatraghavarora/healhack",
     stats: [
       { label: "Hackathon Award", value: "1st Place" },
       { label: "Remedies Database", value: "500+" },
@@ -292,8 +292,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#EDE9FE]",
     textColor: "text-black",
     featured: true,
-    link: "https://github.com/raghavarora/airbomb",
-    github: "https://github.com/raghavarora/airbomb",
+    link: "https://github.com/thatraghavarora/airbomb",
+    github: "https://github.com/thatraghavarora/airbomb",
     stats: [
       { label: "Attack Modules", value: "8+" },
       { label: "Language", value: "Python" },
@@ -318,8 +318,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#E0F2FE]",
     textColor: "text-black",
     featured: true,
-    link: "https://github.com/raghavarora/lookoninternet",
-    github: "https://github.com/raghavarora/lookoninternet",
+    link: "https://github.com/thatraghavarora/lookoninternet",
+    github: "https://github.com/thatraghavarora/lookoninternet",
     stats: [
       { label: "Data Sources", value: "15+" },
       { label: "Report Types", value: "HTML + JSON" },
@@ -346,7 +346,7 @@ export const projects: Project[] = [
     darkCard: true,
     featured: true,
     link: "https://webpeaker.com",
-    github: "https://github.com/raghavarora/webpeaker",
+    github: "https://github.com/thatraghavarora/webpeaker",
     stats: [
       { label: "Active Clients", value: "25+" },
       { label: "Vulnerabilities Patched", value: "140+" },
@@ -372,7 +372,7 @@ export const projects: Project[] = [
     textColor: "text-black",
     featured: true,
     link: "https://cyberhelper.io",
-    github: "https://github.com/raghavarora/cyberhelper",
+    github: "https://github.com/thatraghavarora/cyberhelper",
     stats: [
       { label: "Community Waitlist", value: "2,400+" },
       { label: "Tools Integrated", value: "18" },
@@ -397,8 +397,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#DCFCE7]",
     textColor: "text-black",
     featured: false,
-    link: "https://github.com/raghavarora/face-auth-library",
-    github: "https://github.com/raghavarora/face-auth-library",
+    link: "https://github.com/thatraghavarora/face-auth-library",
+    github: "https://github.com/thatraghavarora/face-auth-library",
     stats: [
       { label: "Recognition Speed", value: "<1 sec" },
       { label: "Accuracy", value: "97%+" },
@@ -424,7 +424,7 @@ export const projects: Project[] = [
     textColor: "text-black",
     featured: true,
     link: "https://passwords.thatraghavarora.com",
-    github: "https://github.com/raghavarora/secure-password-generator",
+    github: "https://github.com/thatraghavarora/secure-password-generator",
     stats: [
       { label: "GitHub Stars", value: "320+" },
       { label: "Zero Logs", value: "100% Client-side" },
@@ -449,8 +449,8 @@ export const projects: Project[] = [
     accentColor: "bg-[#FEF9C3]", // Light Yellow
     textColor: "text-black",
     featured: false,
-    link: "https://github.com/raghavarora/drug-detection-ai",
-    github: "https://github.com/raghavarora/drug-detection-ai",
+    link: "https://github.com/thatraghavarora/drug-detection-ai",
+    github: "https://github.com/thatraghavarora/drug-detection-ai",
     stats: [
       { label: "Compounds Cataloged", value: "120+" },
       { label: "Model Architecture", value: "ResNet-50 + SVM" },
@@ -475,7 +475,7 @@ export const projects: Project[] = [
     textColor: "text-black",
     featured: false,
     link: "https://thatraghavarora.com",
-    github: "https://github.com/raghavarora/thatraghavarora",
+    github: "https://github.com/thatraghavarora/thatraghavarora",
     stats: [
       { label: "Lighthouse Score", value: "99" },
       { label: "Design System", value: "Neo-Brutalism" },

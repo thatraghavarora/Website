@@ -1060,7 +1060,7 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                     UPI / Pay (99 RS)
                   </a>
                   <a
-                    href="https://twitter.com/raghavarora"
+                    href="https://twitter.com/thatraghavarora"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-brutal btn-brutal-yellow py-3 text-xs uppercase font-black text-center"
