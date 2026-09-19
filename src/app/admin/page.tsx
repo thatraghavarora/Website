@@ -34,7 +34,9 @@ import {
   Copy,
   Eye,
   Clock,
-  Sparkles
+  Sparkles,
+  Menu,
+  X
 } from "lucide-react";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 
@@ -148,6 +150,7 @@ export default function AdminPage() {
 
   // Dashboard Data
   const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
   const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
@@ -662,115 +665,405 @@ export default function AdminPage() {
   // ---------------------------------------------------------------------------
   // AUTHENTICATED ADMIN CONSOLE
   // ---------------------------------------------------------------------------
+  const pendingUtrsCount = purchases.filter((p) => p.verification_status === "pending_verification").length;
+  const newLeadsCount = inquiries.filter((i) => i.status === "new").length;
+
+  const tabMeta: Record<TabType, { title: string; subtitle: string; icon: React.ComponentType<{ className?: string }> }> = {
+    overview: {
+      title: "Overview & Metrics",
+      subtitle: "System health, live metrics, revenue estimates and platform activity",
+      icon: Activity,
+    },
+    purchases: {
+      title: "Purchases & UTR Verification",
+      subtitle: "Verify student UPI UTR numbers, grant manual access, and track paid courses",
+      icon: ShoppingBag,
+    },
+    progress: {
+      title: "Student Progress & Checklists",
+      subtitle: "Monitor enrolled students, module progress percentage, and checklist completion",
+      icon: ShieldCheck,
+    },
+    blogs: {
+      title: "Blog & Cybersecurity Articles",
+      subtitle: "Create, edit, publish, and delete public blog posts and writeups",
+      icon: BookOpen,
+    },
+    community: {
+      title: "Community Discussions",
+      subtitle: "Moderate student discussions, community questions, answers and comments",
+      icon: MessageSquare,
+    },
+    roadmap: {
+      title: "Paid Roadmap Curriculum",
+      subtitle: "Comprehensive 7-phase curriculum from Networking to Certified Pentester",
+      icon: Map,
+    },
+    inquiries: {
+      title: "Hire Me Leads & Inquiries",
+      subtitle: "Manage client leads, service requests, timelines and client communications",
+      icon: Mail,
+    },
+    users: {
+      title: "Registered Users & Roles",
+      subtitle: "Inspect registered accounts, roles (student/admin), and enrollment history",
+      icon: Users,
+    },
+    validation: {
+      title: "Server Validation Suite",
+      subtitle: "Real-time interactive server-side validation tester and sanitization tester",
+      icon: Shield,
+    },
+  };
+
+  const navSections = [
+    {
+      group: "Core Management",
+      items: [
+        { id: "overview" as TabType, label: "Overview & Metrics", icon: Activity, badge: null, badgeColor: "" },
+        {
+          id: "purchases" as TabType,
+          label: "Purchases & UTRs",
+          icon: ShoppingBag,
+          badge: pendingUtrsCount > 0 ? `${pendingUtrsCount} Pending` : `${purchases.length}`,
+          badgeColor: pendingUtrsCount > 0 ? "bg-amber-400 text-black animate-pulse" : "bg-neutral-800 text-neutral-300",
+        },
+        {
+          id: "progress" as TabType,
+          label: "Student Progress",
+          icon: ShieldCheck,
+          badge: `${progressList.length}`,
+          badgeColor: "bg-neutral-800 text-neutral-300",
+        },
+      ],
+    },
+    {
+      group: "Content & Learning",
+      items: [
+        {
+          id: "roadmap" as TabType,
+          label: "Roadmap Curriculum",
+          icon: Map,
+          badge: "Paid Pro",
+          badgeColor: "bg-emerald-400 text-black",
+        },
+        {
+          id: "blogs" as TabType,
+          label: "Blogs & Writeups",
+          icon: BookOpen,
+          badge: `${blogs.length}`,
+          badgeColor: "bg-neutral-800 text-neutral-300",
+        },
+        {
+          id: "community" as TabType,
+          label: "Community Forum",
+          icon: MessageSquare,
+          badge: `${communityPosts.length}`,
+          badgeColor: "bg-neutral-800 text-neutral-300",
+        },
+      ],
+    },
+    {
+      group: "CRM & Platform",
+      items: [
+        {
+          id: "inquiries" as TabType,
+          label: "Hire Me Leads",
+          icon: Mail,
+          badge: newLeadsCount > 0 ? `${newLeadsCount} New` : `${inquiries.length}`,
+          badgeColor: newLeadsCount > 0 ? "bg-red-500 text-white" : "bg-neutral-800 text-neutral-300",
+        },
+        {
+          id: "users" as TabType,
+          label: "Users & Accounts",
+          icon: Users,
+          badge: `${users.length}`,
+          badgeColor: "bg-neutral-800 text-neutral-300",
+        },
+        {
+          id: "validation" as TabType,
+          label: "Validation Suite",
+          icon: Shield,
+          badge: "Active",
+          badgeColor: "bg-emerald-400 text-black",
+        },
+      ],
+    },
+  ];
+
+  const CurrentTabIcon = tabMeta[activeTab]?.icon || Activity;
+
   return (
-    <div className="min-h-screen bg-neutral-100 py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* TOP STATUS TOAST */}
-        {statusMessage && (
-          <div
-            className={`p-4 rounded-2xl border-[3px] border-black flex items-center justify-between shadow-brutal-sm transition-all ${
-              statusMessage.type === "success" ? "bg-emerald-200 text-emerald-950" : "bg-red-200 text-red-950"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              {statusMessage.type === "success" ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-800 shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-red-800 shrink-0" />
-              )}
-              <span className="text-xs sm:text-sm font-black">{statusMessage.text}</span>
-            </div>
-            <button
-              onClick={() => setStatusMessage(null)}
-              className="font-black text-xs uppercase px-2 py-0.5 rounded border border-black bg-white hover:bg-black hover:text-white transition-colors"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* ══ HEADER BANNER ════════════════════════════════════════════ */}
-        <div className="rounded-3xl border-[3.5px] border-black bg-black text-white p-6 sm:p-8 shadow-brutal-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="px-3 py-0.5 rounded-full border-2 border-amber-400 bg-amber-400 text-black text-[10px] font-black uppercase tracking-wider">
-                Raghav Arora Command Center
-              </span>
-              <span className="px-3 py-0.5 rounded-full border border-neutral-700 bg-neutral-900 text-emerald-400 text-[10px] font-mono font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                {stats?.systemStatus || "Live Active"}
-              </span>
-              <span className="px-3 py-0.5 rounded-full border border-neutral-700 bg-neutral-900 text-amber-300 text-[10px] font-mono font-bold flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                Server-Side Validation: ACTIVE
+    <div className="min-h-screen bg-neutral-100 text-black font-sans flex flex-col md:flex-row">
+      {/* ══ DESKTOP FIXED LEFT SIDEBAR ═══════════════════════════════ */}
+      <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 bg-black text-white border-r-[3.5px] border-black z-40 shadow-brutal-xl justify-between">
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Brand Header */}
+          <div className="p-5 border-b-[3px] border-neutral-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400 text-black font-black flex items-center justify-center text-sm border-2 border-white shadow-brutal-xs">
+                  RA
+                </div>
+                <div>
+                  <h2 className="font-display font-black text-sm text-white tracking-tight leading-none">
+                    thatraghavarora
+                  </h2>
+                  <span className="text-[10px] font-mono text-amber-400 uppercase font-black tracking-wider">
+                    Admin Command Center
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live
               </span>
             </div>
-
-            <h1 className="text-2xl sm:text-4xl font-black text-white font-display tracking-tight">
-              Platform Administration
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
-              Manage incoming Hire Me lead inquiries, grant and monitor roadmap purchases, inspect registered users, and inspect server-side validation rules.
-            </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={loadDashboardData}
-              disabled={loadingData}
-              className="px-4 py-2.5 rounded-xl border-2 border-white bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs"
-              title="Refresh all data"
+          {/* Navigation Links Grouped */}
+          <nav className="p-4 space-y-5 flex-1">
+            {navSections.map((section, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <p className="px-3 text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                  {section.group}
+                </p>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                          isActive
+                            ? "bg-amber-300 text-black border-black shadow-brutal-xs font-black"
+                            : "text-neutral-300 border-transparent hover:bg-neutral-900 hover:text-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 stroke-[2.5] ${isActive ? "text-black" : "text-neutral-400"}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span
+                            className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-black/20 ${item.badgeColor}`}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t-[3px] border-neutral-800 space-y-3 bg-neutral-950 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-black text-amber-400">
+                🛡️
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-black text-white leading-none">Raghav Arora</p>
+                <p className="text-[10px] text-neutral-400 font-mono mt-0.5">Super Administrator</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Link
+              href="/"
+              target="_blank"
+              className="px-2.5 py-2 rounded-xl border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer"
+              title="Open public website"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? "animate-spin" : ""}`} />
-              <span>Refresh</span>
-            </button>
+              <ExternalLink className="w-3 h-3 text-amber-400" />
+              <span>Website</span>
+            </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2.5 rounded-xl border-2 border-red-400 bg-red-500 hover:bg-red-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs"
+              className="px-2.5 py-2 rounded-xl border border-red-500/50 bg-red-950/40 hover:bg-red-900/60 text-red-300 text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3 h-3 text-red-400" />
               <span>Sign Out</span>
             </button>
           </div>
         </div>
+      </aside>
 
-        {/* ══ NAVIGATION TABS ══════════════════════════════════════════ */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {[
-            { id: "overview", label: "Overview & Metrics", icon: Activity },
-            { id: "purchases", label: `Purchases & UTRs (${purchases.length})`, icon: ShoppingBag },
-            { id: "progress", label: `Student Progress (${progressList.length})`, icon: ShieldCheck },
-            { id: "blogs", label: `Blogs & Articles (${blogs.length})`, icon: BookOpen },
-            { id: "community", label: `Community (${communityPosts.length})`, icon: MessageSquare },
-            { id: "roadmap", label: "Paid Roadmap Curriculum", icon: Map },
-            { id: "inquiries", label: `Hire Me Leads (${inquiries.length})`, icon: Mail },
-            { id: "users", label: `Users & Roles (${users.length})`, icon: Users },
-            { id: "validation", label: "Server Validation Suite", icon: Shield },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
+      {/* ══ MOBILE SIDEBAR DRAWER OVERLAY ═══════════════════════════ */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden bg-black/75 backdrop-blur-sm flex">
+          <div className="w-72 bg-black text-white border-r-[3.5px] border-black flex flex-col justify-between h-full shadow-brutal-xl">
+            <div className="flex flex-col flex-1 overflow-y-auto">
+              <div className="p-5 border-b-[3px] border-neutral-800 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-400 text-black font-black flex items-center justify-center text-xs">
+                    RA
+                  </div>
+                  <div>
+                    <h2 className="font-display font-black text-xs text-white">thatraghavarora</h2>
+                    <span className="text-[9px] font-mono text-amber-400 uppercase font-bold">Admin Console</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className="p-1.5 rounded-lg border border-neutral-700 hover:bg-neutral-800 text-neutral-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <nav className="p-4 space-y-4 flex-1">
+                {navSections.map((section, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <p className="px-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                      {section.group}
+                    </p>
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveTab(item.id);
+                            setMobileSidebarOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${
+                            isActive
+                              ? "bg-amber-300 text-black border-black shadow-brutal-xs font-black"
+                              : "text-neutral-300 border-transparent hover:bg-neutral-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-4 h-4 stroke-[2.5]" />
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${item.badgeColor}`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </nav>
+            </div>
+
+            <div className="p-4 border-t border-neutral-800 space-y-2 bg-neutral-950">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-4 py-3 rounded-2xl border-[2.5px] border-black text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 whitespace-nowrap transition-all shadow-brutal-xs ${
-                  isActive
-                    ? "bg-amber-300 text-black shadow-brutal"
-                    : "bg-white text-neutral-700 hover:bg-neutral-50"
-                }`}
+                onClick={handleLogout}
+                className="w-full py-2.5 rounded-xl border border-red-500 bg-red-600 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
               >
-                <Icon className="w-4 h-4 stroke-[2.5]" />
-                <span>{tab.label}</span>
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
               </button>
-            );
-          })}
-        </div>
+            </div>
+          </div>
 
-        {/* ══════════════════════════════════════════════════════════════ */}
-        {/* TAB 1: OVERVIEW & METRICS                                     */}
-        {/* ══════════════════════════════════════════════════════════════ */}
-        {activeTab === "overview" && (
+          <div className="flex-1" onClick={() => setMobileSidebarOpen(false)} />
+        </div>
+      )}
+
+      {/* ══ MAIN CONTENT COLUMN ══════════════════════════════════════ */}
+      <div className="flex-1 md:pl-72 flex flex-col min-w-0 min-h-screen">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b-[3px] border-black px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-brutal-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl border-2 border-black bg-amber-300 text-black hover:bg-amber-400 transition-colors shadow-brutal-xs cursor-pointer"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="w-10 h-10 rounded-xl border-2 border-black bg-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs hidden sm:flex">
+              <CurrentTabIcon className="w-5 h-5 text-black stroke-[2.5]" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-black text-black font-display tracking-tight truncate">
+                {tabMeta[activeTab]?.title}
+              </h1>
+              <p className="text-xs text-neutral-500 font-bold truncate hidden sm:block">
+                {tabMeta[activeTab]?.subtitle}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            {activeTab === "blogs" && (
+              <button
+                onClick={() => setShowCreateBlogModal(true)}
+                className="px-3.5 py-2 rounded-xl border-2 border-black bg-amber-400 hover:bg-amber-300 text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">New Blog</span>
+              </button>
+            )}
+            {activeTab === "purchases" && (
+              <button
+                onClick={() => setShowGrantModal(true)}
+                className="px-3.5 py-2 rounded-xl border-2 border-black bg-amber-400 hover:bg-amber-300 text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Grant Access</span>
+              </button>
+            )}
+            <button
+              onClick={loadDashboardData}
+              disabled={loadingData}
+              className="px-3.5 py-2 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs cursor-pointer"
+              title="Refresh all data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingData ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-neutral-200 bg-neutral-100 text-[10px] font-mono font-bold text-neutral-700">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Validation: ACTIVE</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Container */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full">
+          {/* TOP STATUS TOAST */}
+          {statusMessage && (
+            <div
+              className={`p-4 rounded-2xl border-[3px] border-black flex items-center justify-between shadow-brutal-sm transition-all ${
+                statusMessage.type === "success" ? "bg-emerald-200 text-emerald-950" : "bg-red-200 text-red-950"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                {statusMessage.type === "success" ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-800 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-800 shrink-0" />
+                )}
+                <span className="text-xs sm:text-sm font-black">{statusMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setStatusMessage(null)}
+                className="font-black text-xs uppercase px-2 py-0.5 rounded border border-black bg-white hover:bg-black hover:text-white transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════════ */}
+          {/* TAB 1: OVERVIEW & METRICS                                     */}
+          {/* ══════════════════════════════════════════════════════════════ */}
+          {activeTab === "overview" && (
           <div className="space-y-6">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1782,7 +2075,8 @@ export default function AdminPage() {
         {/* TAB 6: PAID ROADMAP DEEP CURRICULUM                          */}
         {/* ══════════════════════════════════════════════════════════════ */}
         {activeTab === "roadmap" && <AdminRoadmapCurriculum />}
-      </div>
+      </main>
+    </div>
 
       {/* ══ MODAL 1: VIEW FULL INQUIRY DETAILS ═════════════════════════ */}
       {selectedInquiry && (

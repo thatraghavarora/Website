@@ -13,6 +13,7 @@ export default function ConditionalLayout({
 
   // Pages that should NOT show the main site Navbar/Footer
   const hideShell =
+    pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup");
