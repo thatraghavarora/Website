@@ -199,7 +199,7 @@ export function validatePurchaseInput(body: unknown): PurchaseInputValidationRes
   const transactionId = sanitizeString(record.transactionId, 100) || `TXN-${Date.now()}`;
 
   // User Email (optional in request if retrieved from session, but validated if passed)
-  let userEmail = "guest@thatraghavarora.com";
+  let userEmail = "guest@thatraghavarora.in";
   if (record.userEmail) {
     const emailRes = validateEmail(record.userEmail);
     if (!emailRes.valid) {

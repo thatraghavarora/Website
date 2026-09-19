@@ -18,12 +18,12 @@ export const metadata: Metadata = {
     "Webpeaker",
     "Online Courses"
   ],
-  authors: [{ name: "Raghav Arora", url: "https://thatraghavarora.com" }],
+  authors: [{ name: "Raghav Arora", url: "https://thatraghavarora.in" }],
   openGraph: {
     title: "thatraghavarora | Raghav Arora",
     description:
       "Cyber Security Enthusiast, Full Stack Developer, Bug Bounty Hunter, and Educator.",
-    url: "https://thatraghavarora.com",
+    url: "https://thatraghavarora.in",
     siteName: "thatraghavarora",
     images: [
       {

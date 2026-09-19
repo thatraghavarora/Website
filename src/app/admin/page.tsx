@@ -454,16 +454,6 @@ export default function AdminPage() {
             </form>
 
             <div className="mt-6 pt-6 border-t-2 border-neutral-200 text-center">
-              <p className="text-[11px] text-neutral-500 font-bold mb-2">
-                Quick Dev Auto-Fill:
-              </p>
-              <button
-                type="button"
-                onClick={() => setSecretKeyInput("raghav@admin2026")}
-                className="px-3 py-1 rounded-lg border border-black bg-amber-100 hover:bg-amber-200 text-black text-xs font-mono font-bold transition-all shadow-brutal-xs"
-              >
-                raghav@admin2026
-              </button>
               <div className="mt-4">
                 <Link
                   href="/"
@@ -1245,7 +1235,7 @@ export default function AdminPage() {
                     onClick={() =>
                       setTestPayload({
                         name: "<script>alert('xss')</script> Rag",
-                        email: "raghav@thatraghavarora.in",
+                        email: "connect@thatraghavarora.in",
                         serviceType: "1:1 Live Guidance",
                         details: "Legitimate inquiry with script tags to test server sanitization.",
                       })

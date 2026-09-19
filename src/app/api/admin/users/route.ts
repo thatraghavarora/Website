@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const sampleProfiles = [
       {
         id: "usr-1",
-        email: "raghav@thatraghavarora.in",
+        email: "connect@thatraghavarora.in",
         full_name: "Raghav Arora",
         role: "admin",
         created_at: new Date(Date.now() - 3600000 * 24 * 180).toISOString(),

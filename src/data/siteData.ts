@@ -118,7 +118,7 @@ export const siteProfile = {
     github: "https://github.com/thatraghavarora",
     x: "https://twitter.com/thatraghavarora",
     youtube: "https://youtube.com/@thatraghavarora",
-    email: "contact@thatraghavarora.com"
+    email: "connect@thatraghavarora.in"
   }
 };
 
@@ -423,7 +423,7 @@ export const projects: Project[] = [
     accentColor: "bg-[#EDE9FE]", // Light Purple
     textColor: "text-black",
     featured: true,
-    link: "https://passwords.thatraghavarora.com",
+    link: "https://passwords.thatraghavarora.in",
     github: "https://github.com/thatraghavarora/secure-password-generator",
     stats: [
       { label: "GitHub Stars", value: "320+" },
@@ -474,7 +474,7 @@ export const projects: Project[] = [
     accentColor: "bg-[#FBCFE8]", // Pink
     textColor: "text-black",
     featured: false,
-    link: "https://thatraghavarora.com",
+    link: "https://thatraghavarora.in",
     github: "https://github.com/thatraghavarora/thatraghavarora",
     stats: [
       { label: "Lighthouse Score", value: "99" },
