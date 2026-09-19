@@ -183,3 +183,27 @@ CREATE POLICY "Anyone or authenticated users can create community comments."
   ON public.community_comments FOR INSERT
   WITH CHECK (true);
 
+
+-- 7. Create Roadmap Progress Table (Checklist Tracking)
+CREATE TABLE IF NOT EXISTS public.roadmap_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_email TEXT NOT NULL,
+  roadmap_slug TEXT NOT NULL,
+  completed_items TEXT[] DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE (roadmap_slug, user_email)
+);
+
+-- Enable RLS on Roadmap Progress
+ALTER TABLE public.roadmap_progress ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone or authenticated user can view roadmap progress."
+  ON public.roadmap_progress FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone or authenticated user can insert or update roadmap progress."
+  ON public.roadmap_progress FOR ALL
+  USING (true)
+  WITH CHECK (true);
+

@@ -36,7 +36,17 @@ import {
 
 type SubTab = "networking" | "kali" | "osint" | "tools" | "bugs" | "ctf" | "certificate";
 
-export default function AdminRoadmapCurriculum() {
+interface AdminRoadmapCurriculumProps {
+  completedItems?: string[];
+  onToggleItem?: (itemId: string) => void;
+  syncStatus?: string | null;
+}
+
+export default function AdminRoadmapCurriculum({
+  completedItems = [],
+  onToggleItem,
+  syncStatus,
+}: AdminRoadmapCurriculumProps = {}) {
   const [currentSubTab, setCurrentSubTab] = useState<SubTab>("networking");
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
@@ -542,9 +552,25 @@ export default function AdminRoadmapCurriculum() {
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-200 border border-black text-black font-black text-[10px] uppercase">
-                      {tool.category}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-200 border border-black text-black font-black text-[10px] uppercase">
+                        {tool.category}
+                      </span>
+                      {onToggleItem && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleItem(`tool-${tool.name}`)}
+                          className={`px-2 py-0.5 rounded-lg border text-[10px] font-black uppercase flex items-center gap-1 transition-all ${
+                            completedItems.includes(`tool-${tool.name}`)
+                              ? "bg-emerald-300 text-black border-black shadow-brutal-xs"
+                              : "bg-white text-neutral-600 border-neutral-300 hover:border-black"
+                          }`}
+                        >
+                          <Check className={`w-3 h-3 ${completedItems.includes(`tool-${tool.name}`) ? "stroke-[3]" : "text-transparent"}`} />
+                          <span>{completedItems.includes(`tool-${tool.name}`) ? "Mastered" : "Tick Done"}</span>
+                        </button>
+                      )}
+                    </div>
                     <span className="font-mono text-[10px] font-black text-neutral-400">TOOL #{idx + 1}</span>
                   </div>
 
@@ -670,7 +696,24 @@ export default function AdminRoadmapCurriculum() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      {onToggleItem && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleItem(`bug-${bug.id}`);
+                          }}
+                          className={`px-2.5 py-1 rounded-xl border text-[10px] font-black uppercase flex items-center gap-1 transition-all ${
+                            completedItems.includes(`bug-${bug.id}`)
+                              ? "bg-emerald-300 text-black border-black shadow-brutal-xs"
+                              : "bg-neutral-100 text-neutral-700 border-neutral-300 hover:border-black"
+                          }`}
+                        >
+                          <Check className={`w-3 h-3 ${completedItems.includes(`bug-${bug.id}`) ? "stroke-[3]" : "text-transparent"}`} />
+                          <span>{completedItems.includes(`bug-${bug.id}`) ? "Practiced ✓" : "Tick Practiced"}</span>
+                        </button>
+                      )}
                       <span
                         className={`px-2.5 py-0.5 rounded-full border text-[11px] font-black uppercase ${getSeverityBadge(
                           bug.severity
@@ -794,16 +837,30 @@ export default function AdminRoadmapCurriculum() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t-2 border-neutral-100">
+                <div className="pt-4 border-t-2 border-neutral-100 flex items-center gap-2">
                   <a
                     href={platform.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-brutal btn-brutal-primary text-xs uppercase font-black py-2 px-3 w-full flex items-center justify-center gap-2"
+                    className="btn-brutal btn-brutal-primary text-xs uppercase font-black py-2 px-3 flex-1 flex items-center justify-center gap-2"
                   >
                     <span>Launch {platform.name}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                  {onToggleItem && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleItem(`ctf-${platform.name}`)}
+                      className={`py-2 px-3 rounded-xl border-2 border-black text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-brutal-xs ${
+                        completedItems.includes(`ctf-${platform.name}`)
+                          ? "bg-emerald-400 text-black font-black"
+                          : "bg-white text-neutral-700 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <Check className={`w-3.5 h-3.5 ${completedItems.includes(`ctf-${platform.name}`) ? "stroke-[3]" : "text-neutral-400"}`} />
+                      <span>{completedItems.includes(`ctf-${platform.name}`) ? "Solved" : "Tick Solved"}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
