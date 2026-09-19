@@ -27,31 +27,40 @@ export default function DashboardRoadmapStandalonePage() {
   const [cashfreeRoadmap, setCashfreeRoadmap] = useState<RoadmapItem | null>(null);
 
   useEffect(() => {
-    // Check localStorage
-    const loaded: string[] = [];
-    roadmaps.forEach((r) => {
-      try {
-        if (localStorage.getItem(`roadmap_purchased_${r.slug}`) === "true") {
-          loaded.push(r.slug);
-        }
-      } catch {}
-    });
-    setPurchasedRoadmapSlugs(loaded);
-
-    // Check API
+    // Check API strictly for confirmed active purchases in database
     fetch("/api/purchases")
       .then((res) => res.json())
       .then((data) => {
         if (data.purchases && Array.isArray(data.purchases)) {
           const apiSlugs = data.purchases
-            .filter((p: any) => p.item_type === "roadmap" || !p.item_type)
+            .filter((p: any) => (p.item_type === "roadmap" || !p.item_type) && p.status === "active")
             .map((p: any) => p.item_slug);
-          if (apiSlugs.length > 0) {
-            setPurchasedRoadmapSlugs((prev) => Array.from(new Set([...prev, ...apiSlugs])));
-          }
+          setPurchasedRoadmapSlugs(apiSlugs);
+
+          // Clean up stale localStorage for roadmaps that are NOT active on server
+          roadmaps.forEach((r) => {
+            if (!apiSlugs.includes(r.slug)) {
+              try {
+                localStorage.removeItem(`roadmap_purchased_${r.slug}`);
+              } catch {}
+            } else {
+              try {
+                localStorage.setItem(`roadmap_purchased_${r.slug}`, "true");
+              } catch {}
+            }
+          });
+        } else {
+          setPurchasedRoadmapSlugs([]);
+          roadmaps.forEach((r) => {
+            try {
+              localStorage.removeItem(`roadmap_purchased_${r.slug}`);
+            } catch {}
+          });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setPurchasedRoadmapSlugs([]);
+      });
   }, []);
 
   const handleUnlockSuccess = async () => {

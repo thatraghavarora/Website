@@ -661,7 +661,13 @@ export default function ChapterRoadmapViewer({
                 return (
                   <div
                     key={item.id}
-                    onClick={() => onToggleItem && onToggleItem(item.id)}
+                    onClick={() => {
+                      if (!isUnlocked) {
+                        if (onRequestUnlock) onRequestUnlock();
+                        return;
+                      }
+                      if (onToggleItem) onToggleItem(item.id);
+                    }}
                     className={`p-3 border-2 border-black flex items-start gap-3 cursor-pointer transition-all ${
                       isChecked
                         ? "bg-emerald-50 border-emerald-600 text-emerald-950"

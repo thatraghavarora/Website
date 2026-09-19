@@ -19,20 +19,7 @@ interface LocalDemoPurchase {
   created_at: string;
 }
 
-const localDemoPurchases: LocalDemoPurchase[] = [
-  {
-    id: "demo-purchase-web-pentest",
-    user_email: "guest@thatraghavarora.in",
-    item_slug: "web-pentesting-cyber-security",
-    item_title: "Web Penetration Testing & Bug Bounty Roadmap",
-    item_type: "roadmap",
-    amount: "99 RS",
-    payment_method: "upi",
-    transaction_id: "TXN-DEMO-INIT",
-    status: "active",
-    created_at: new Date().toISOString(),
-  },
-];
+const localDemoPurchases: LocalDemoPurchase[] = [];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -56,29 +56,33 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
   useEffect(() => {
     setMounted(true);
-    let unlocked = false;
-    try {
-      unlocked = localStorage.getItem(`roadmap_purchased_${roadmap.slug}`) === "true";
-      if (unlocked) {
-        setIsPurchased(true);
-        setExpandedPhase(0);
-      }
-    } catch {}
 
     try {
       const stored = localStorage.getItem(`roadmap_completed_${roadmap.slug}`);
       if (stored) setCompletedItems(JSON.parse(stored));
     } catch {}
 
+    // Verify purchase strictly from server database
     fetch(`/api/purchases?slug=${roadmap.slug}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.isUnlocked) {
           setIsPurchased(true);
-          if (!unlocked) setExpandedPhase(0);
+          setExpandedPhase(0);
+          try {
+            localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
+          } catch {}
+        } else {
+          // If server says false, strictly lock roadmap and remove stale localStorage
+          setIsPurchased(false);
+          try {
+            localStorage.removeItem(`roadmap_purchased_${roadmap.slug}`);
+          } catch {}
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setIsPurchased(false);
+      });
 
     fetch(`/api/roadmap/progress?slug=${roadmap.slug}`)
       .then((res) => res.json())

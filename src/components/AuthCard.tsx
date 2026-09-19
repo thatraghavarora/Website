@@ -32,6 +32,8 @@ export default function AuthCard({ initialMode = "login" }: AuthCardProps) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  // Post-Signup email verification step
+  const [createdAccountEmail, setCreatedAccountEmail] = useState<string | null>(null);
   // Post-Google extra details step
   const [googleStep, setGoogleStep] = useState(false);
   const [googleName, setGoogleName] = useState("");
@@ -42,6 +44,7 @@ export default function AuthCard({ initialMode = "login" }: AuthCardProps) {
     setMode(m);
     setErrorMsg("");
     setSuccessMsg("");
+    setCreatedAccountEmail(null);
     setFullName(""); setEmail(""); setPassword(""); setMobile("");
   };
 
@@ -66,7 +69,14 @@ export default function AuthCard({ initialMode = "login" }: AuthCardProps) {
         setLoading(false);
         return;
       }
-      setSuccessMsg(mode === "signup" ? "Account created! Redirecting..." : "Login successful! Redirecting...");
+
+      if (mode === "signup") {
+        setCreatedAccountEmail(email);
+        setLoading(false);
+        return;
+      }
+
+      setSuccessMsg("Login successful! Redirecting...");
       setTimeout(() => router.push("/dashboard"), 1000);
     } catch {
       setErrorMsg("Network error. Please try again.");
@@ -115,6 +125,74 @@ export default function AuthCard({ initialMode = "login" }: AuthCardProps) {
 
   const inputClass =
     "w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-black bg-white text-sm font-bold text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-black transition-all shadow-brutal-xs hover:shadow-brutal-sm";
+
+  // ── ACCOUNT CREATED: VERIFY EMAIL SCREEN ──
+  if (createdAccountEmail) {
+    return (
+      <div className="w-full max-w-[440px] bg-white rounded-3xl border-[3px] border-black shadow-brutal-xl p-7 sm:p-9 text-center">
+        {/* Brand Link */}
+        <Link href="/" className="flex items-center gap-2 mb-6 group w-fit mx-auto">
+          <span className="bg-black text-white px-2 py-0.5 rounded-md font-mono text-sm font-black group-hover:bg-purple-700 transition-colors">&lt;/&gt;</span>
+          <span className="font-black text-lg text-black tracking-tight">thatraghavarora</span>
+        </Link>
+
+        {/* Envelope / Verify Icon */}
+        <div className="w-14 h-14 rounded-2xl bg-yellow-300 border-2 border-black flex items-center justify-center mx-auto mb-4 shadow-brutal-sm">
+          <Mail className="w-7 h-7 text-black stroke-[2.5]" />
+        </div>
+
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 border border-emerald-400 text-emerald-900 text-xs font-black uppercase tracking-wider mb-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+          Account Created Successfully!
+        </div>
+
+        <h2 className="text-xl sm:text-2xl font-black text-black font-display tracking-tight mb-2">
+          Verify Your Email
+        </h2>
+
+        <p className="text-xs sm:text-sm font-medium text-neutral-600 mb-5 leading-relaxed">
+          Your account has been created! A confirmation verification link has been sent to:
+          <br />
+          <span className="font-mono font-black text-black bg-yellow-100 px-2.5 py-1 rounded-lg border border-black inline-block mt-2 break-all text-xs sm:text-sm">
+            {createdAccountEmail}
+          </span>
+        </p>
+
+        {/* Action Steps */}
+        <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50 text-left space-y-2 mb-6 shadow-brutal-xs">
+          <p className="text-xs font-black uppercase tracking-wider text-black flex items-center gap-1.5">
+            <span>📩</span> What to do next:
+          </p>
+          <ol className="text-xs font-bold text-neutral-700 space-y-1.5 list-decimal pl-4 leading-normal">
+            <li>Check your email inbox (and Spam/Junk folder).</li>
+            <li>Click the verification link to activate your account.</li>
+            <li>Once verified, click below and enter your password to log in.</li>
+          </ol>
+        </div>
+
+        {/* Button to Log In */}
+        <button
+          type="button"
+          onClick={() => {
+            const savedEmail = createdAccountEmail;
+            setCreatedAccountEmail(null);
+            setMode("login");
+            setEmail(savedEmail);
+            setPassword("");
+            setSuccessMsg("Account created! Please enter your password to log in.");
+          }}
+          className="w-full py-3.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 active:scale-[0.99] text-black font-black text-sm uppercase tracking-wider shadow-brutal-sm hover:shadow-brutal transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <ArrowRight className="w-4 h-4 stroke-[3]" />
+          <span>Click Here to Log In</span>
+        </button>
+
+        <p className="mt-4 text-[11px] font-bold text-neutral-500">
+          Already clicked the link? Click the button above to log in now.
+        </p>
+      </div>
+    );
+  }
 
   // ── GOOGLE EXTRA DETAILS STEP ──
   if (googleStep) {

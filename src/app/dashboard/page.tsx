@@ -2313,7 +2313,22 @@ function SettingsTab() {
         </div>
 
         {/* Logout */}
-        <button className="w-full py-3 rounded-xl border-2 border-black bg-black text-yellow-300 font-black text-sm hover:bg-neutral-800 transition-colors shadow-brutal-sm">
+        <button
+          onClick={async () => {
+            try {
+              await fetch("/api/auth", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "logout" }),
+              });
+            } catch {}
+            try {
+              localStorage.clear();
+            } catch {}
+            window.location.href = "/login";
+          }}
+          className="w-full py-3 rounded-xl border-2 border-black bg-black text-yellow-300 font-black text-sm hover:bg-neutral-800 transition-colors shadow-brutal-sm cursor-pointer"
+        >
           Log Out
         </button>
       </div>
@@ -2374,24 +2389,35 @@ export default function DashboardPage() {
           const apiCourseSlugs = activePurchases
             .filter((p: any) => p.item_type === "course")
             .map((p: any) => p.item_slug);
-          if (apiCourseSlugs.length > 0) {
-            setPurchasedCourseSlugs((prev) =>
-              Array.from(new Set([...prev, ...apiCourseSlugs]))
-            );
-          }
+          setPurchasedCourseSlugs(apiCourseSlugs);
 
           // Roadmap slugs from server
           const apiRoadmapSlugs = activePurchases
             .filter((p: any) => p.item_type === "roadmap" || !p.item_type)
             .map((p: any) => p.item_slug);
-          if (apiRoadmapSlugs.length > 0) {
-            setPurchasedRoadmapSlugs((prev) =>
-              Array.from(new Set([...prev, ...apiRoadmapSlugs]))
-            );
-          }
+          setPurchasedRoadmapSlugs(apiRoadmapSlugs);
+
+          // Clean up stale localStorage for roadmaps that are NOT purchased on server
+          roadmaps.forEach((r) => {
+            if (!apiRoadmapSlugs.includes(r.slug)) {
+              try {
+                localStorage.removeItem(`roadmap_purchased_${r.slug}`);
+              } catch {}
+            }
+          });
+        } else {
+          // If no active purchases on server, clean up roadmap enrollment
+          setPurchasedRoadmapSlugs([]);
+          roadmaps.forEach((r) => {
+            try {
+              localStorage.removeItem(`roadmap_purchased_${r.slug}`);
+            } catch {}
+          });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setPurchasedRoadmapSlugs([]);
+      });
   }, []);
 
   const handleSelectTab = (tab: Tab) => {
