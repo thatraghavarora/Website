@@ -95,14 +95,14 @@ export default function Hero() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 mb-6 w-full sm:w-auto">
-              <a
-                href="#"
+              <Link
+                href="/hire-me"
                 className="btn-brutal btn-brutal-primary px-7 py-3 text-sm font-black tracking-wide w-full sm:w-auto text-center justify-center"
                 id="hero-hire-me-btn"
               >
                 <span>Hire Me</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-              </a>
+              </Link>
               <Link
                 href="/courses"
                 className="btn-brutal btn-brutal-white px-7 py-3 text-sm font-black w-full sm:w-auto text-center justify-center"
