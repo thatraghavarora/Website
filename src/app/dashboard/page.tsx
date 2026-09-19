@@ -37,7 +37,12 @@ import {
   Volume2,
   Maximize2,
   ShoppingBag,
-  X
+  X,
+  MessageSquare,
+  ThumbsUp,
+  Send,
+  MessageCircle,
+  Tag
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { courses, Course } from "@/data/siteData";
@@ -58,6 +63,94 @@ const navItems: NavItem[] = [
   { label: "Roadmap",         shortLabel: "Roadmap",  tab: "roadmap",   icon: Map      },
   { label: "Community",       shortLabel: "Community",tab: "community", icon: Users    },
   { label: "Settings",        shortLabel: "Settings", tab: "settings",  icon: Settings },
+];
+
+// ─── COMMUNITY POST TYPES & INITIAL DATA ─────────
+interface CommunityComment {
+  id: string;
+  author: string;
+  avatarColor: string;
+  content: string;
+  time: string;
+}
+
+interface CommunityPost {
+  id: string;
+  author: string;
+  role: string;
+  avatarColor: string;
+  category: "Bug Bounty" | "Web Security" | "Doubt & Help" | "Achievement" | "General";
+  title: string;
+  content: string;
+  time: string;
+  likes: number;
+  likedByUser?: boolean;
+  comments: CommunityComment[];
+}
+
+const initialCommunityPosts: CommunityPost[] = [
+  {
+    id: "post-1",
+    author: "Aman Verma",
+    role: "Student · Phase 3",
+    avatarColor: "bg-yellow-300",
+    category: "Achievement",
+    title: "Got my first Hall of Fame acknowledgment from NASA! 🚀",
+    content: "Followed the structured recon techniques from Raghav bhai's roadmap. Used sublist3r + httpx on wildcards, identified an exposed sensitive endpoint, and reported it responsibly. Huge thanks to this community!",
+    time: "2 hours ago",
+    likes: 18,
+    likedByUser: false,
+    comments: [
+      {
+        id: "c-1",
+        author: "Raghav Arora",
+        avatarColor: "bg-yellow-400",
+        content: "Proud of you Aman! Incredible work. Keep hunting responsibly! 🔥",
+        time: "1 hour ago",
+      },
+      {
+        id: "c-2",
+        author: "Karan Patel",
+        avatarColor: "bg-purple-300",
+        content: "Inspiring bro! Which phase of the roadmap helped you the most?",
+        time: "45 mins ago",
+      }
+    ],
+  },
+  {
+    id: "post-2",
+    author: "Priya Sharma",
+    role: "Student",
+    avatarColor: "bg-purple-300",
+    category: "Doubt & Help",
+    title: "Question regarding CSRF tokens in multi-step forms",
+    content: "Hey everyone, when analyzing a multi-step checkout form in Burp Suite, the CSRF token changes on step 2. How do you automate CSRF testing with dynamic tokens using Burp Repeater/Macros?",
+    time: "5 hours ago",
+    likes: 7,
+    likedByUser: false,
+    comments: [
+      {
+        id: "c-3",
+        author: "Siddharth Mehta",
+        avatarColor: "bg-blue-300",
+        content: "You can use Burp Session Handling Rules with 'Run a macro' to fetch the new token from step 1 before each request.",
+        time: "3 hours ago",
+      }
+    ],
+  },
+  {
+    id: "post-3",
+    author: "Rohan Gupta",
+    role: "Web Dev Student",
+    avatarColor: "bg-emerald-300",
+    category: "Bug Bounty",
+    title: "Found my first IDOR on an Indian eCommerce program",
+    content: "Just tested user profile address endpoints with sequential IDs in the authorization header. Was able to view delivery addresses of other test accounts. Submitted report via Bugcrowd.",
+    time: "Yesterday",
+    likes: 24,
+    likedByUser: false,
+    comments: [],
+  },
 ];
 
 // ─── DESKTOP SIDEBAR ─────────────────────────────
@@ -1621,44 +1714,411 @@ function RoadmapTab({
   );
 }
 
-// ─── COMMUNITY TAB ───────────────────────────────
+// ─── COMMUNITY TAB (INTERACTIVE STUDENT FEED) ────
 function CommunityTab() {
+  const [posts, setPosts] = useState<CommunityPost[]>(initialCommunityPosts);
+  const [categoryFilter, setCategoryFilter] = useState<string>("All");
+
+  // New post form state
+  const [newPostTitle, setNewPostTitle] = useState("");
+  const [newPostContent, setNewPostContent] = useState("");
+  const [newPostCategory, setNewPostCategory] = useState<CommunityPost["category"]>("Bug Bounty");
+  const [newAuthorName, setNewAuthorName] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
+
+  // Reply inputs
+  const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+
+  // Load posts from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("student_community_posts");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPosts(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const savePosts = (updated: CommunityPost[]) => {
+    setPosts(updated);
+    try {
+      localStorage.setItem("student_community_posts", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleCreatePost = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPostTitle.trim() || !newPostContent.trim()) return;
+
+    const author = newAuthorName.trim() || "Student";
+    const colors = ["bg-yellow-300", "bg-purple-300", "bg-emerald-300", "bg-blue-300", "bg-amber-300"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    const newPost: CommunityPost = {
+      id: `post-${Date.now()}`,
+      author,
+      role: "Student",
+      avatarColor: randomColor,
+      category: newPostCategory,
+      title: newPostTitle.trim(),
+      content: newPostContent.trim(),
+      time: "Just now",
+      likes: 1,
+      likedByUser: true,
+      comments: [],
+    };
+
+    const updated = [newPost, ...posts];
+    savePosts(updated);
+    setNewPostTitle("");
+    setNewPostContent("");
+    setNewAuthorName("");
+    setIsPosting(false);
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+  };
+
+  const handleToggleLike = (postId: string) => {
+    const updated = posts.map((p) => {
+      if (p.id === postId) {
+        const isLiked = p.likedByUser;
+        return {
+          ...p,
+          likes: isLiked ? p.likes - 1 : p.likes + 1,
+          likedByUser: !isLiked,
+        };
+      }
+      return p;
+    });
+    savePosts(updated);
+  };
+
+  const handleAddComment = (postId: string) => {
+    if (!replyText.trim()) return;
+    const author = "You (Student)";
+
+    const updated = posts.map((p) => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          comments: [
+            ...p.comments,
+            {
+              id: `c-${Date.now()}`,
+              author,
+              avatarColor: "bg-yellow-300",
+              content: replyText.trim(),
+              time: "Just now",
+            },
+          ],
+        };
+      }
+      return p;
+    });
+
+    savePosts(updated);
+    setReplyText("");
+    setActiveReplyPostId(null);
+  };
+
+  const categories = ["All", "Bug Bounty", "Web Security", "Doubt & Help", "Achievement", "General"];
+  const filteredPosts = posts.filter(
+    (p) => categoryFilter === "All" || p.category === categoryFilter
+  );
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-black text-black font-display">Community</h2>
-        <p className="text-sm font-bold text-neutral-500 mt-1">Connect with fellow hackers and developers</p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-black font-display">Student Community Feed</h2>
+          <p className="text-sm font-bold text-neutral-500 mt-1">
+            Discuss bugs, share achievements, ask technical doubts, and connect with peers
+          </p>
+        </div>
+        <button
+          onClick={() => setIsPosting(!isPosting)}
+          className="px-5 py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider shadow-brutal transition-transform hover:-translate-y-0.5 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+        >
+          {isPosting ? <X className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          <span>{isPosting ? "Close Form" : "Create New Post"}</span>
+        </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="rounded-2xl border-[3px] border-black bg-neutral-950 p-6 shadow-brutal">
-          <div className="flex items-center gap-2 mb-3"><span className="w-2 h-2 rounded-full bg-red-500 animate-ping" /><span className="font-black text-xs text-red-400 uppercase tracking-wider">Live This Week</span></div>
-          <h3 className="font-black text-white text-lg mb-2 font-display">Bug Bounty Walkthrough Session</h3>
-          <p className="text-xs font-bold text-neutral-400 mb-4">Saturday 7:00 PM IST — Raghav will walk through a real recon-to-report workflow live.</p>
-          <a href="https://discord.gg/thatraghavarora" target="_blank" rel="noopener noreferrer" className="block w-full py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-sm hover:bg-yellow-400 transition-colors shadow-brutal-xs">
-            Join Discord Server
-          </a>
-        </div>
-        <div className="rounded-2xl border-[3px] border-black bg-white p-6 shadow-brutal">
-          <Globe className="w-6 h-6 text-blue-600 mb-3" />
-          <h3 className="font-black text-black text-lg mb-2 font-display">Hall of Fame Members</h3>
-          <p className="text-xs font-bold text-neutral-500 mb-4">Students who got acknowledged by NASA, WHO, Swiggy and more after completing this roadmap.</p>
-          <div className="flex -space-x-2 mb-4">
-            {["R","A","S","K","P"].map((l, i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-yellow-300 flex items-center justify-center text-xs font-black text-black shadow-brutal-xs">{l}</div>
-            ))}
-            <div className="w-8 h-8 rounded-full border-2 border-black bg-black flex items-center justify-center text-[10px] font-black text-yellow-300">+50</div>
+
+      {/* CREATE POST FORM */}
+      {isPosting && (
+        <form
+          onSubmit={handleCreatePost}
+          className="rounded-2xl border-[3px] border-black bg-white p-5 sm:p-6 shadow-brutal space-y-4"
+        >
+          <div className="flex items-center justify-between pb-3 border-b-2 border-neutral-100">
+            <h3 className="font-display font-black text-base text-black flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-700" /> Share with the Community
+            </h3>
+            <span className="text-[10px] font-bold text-neutral-400">All students can read and reply</span>
           </div>
-          <Link href="/roadmap" className="block w-full py-2.5 rounded-xl border-2 border-black bg-black text-yellow-300 text-center font-black text-xs hover:bg-neutral-800 transition-colors shadow-brutal-xs">
-            See Roadmap →
-          </Link>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-black uppercase text-neutral-600 block mb-1">
+                Your Name / Handle
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Aman / @aman_hacks (Optional)"
+                value={newAuthorName}
+                onChange={(e) => setNewAuthorName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black text-xs font-bold text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-neutral-50"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-black uppercase text-neutral-600 block mb-1">
+                Category
+              </label>
+              <select
+                value={newPostCategory}
+                onChange={(e) => setNewPostCategory(e.target.value as any)}
+                className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black text-xs font-black text-black focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-neutral-50"
+              >
+                <option value="Bug Bounty">Bug Bounty</option>
+                <option value="Web Security">Web Security</option>
+                <option value="Doubt & Help">Doubt & Help</option>
+                <option value="Achievement">Achievement</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black uppercase text-neutral-600 block mb-1">
+              Post Title
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Found my first XSS on Bugcrowd / Question about Subnetting"
+              value={newPostTitle}
+              onChange={(e) => setNewPostTitle(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black text-xs font-bold text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-neutral-50"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black uppercase text-neutral-600 block mb-1">
+              Description / Details
+            </label>
+            <textarea
+              required
+              rows={3}
+              placeholder="Explain what you learned, your reproduction steps, or the specific doubt you have..."
+              value={newPostContent}
+              onChange={(e) => setNewPostContent(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border-2 border-black text-xs font-bold text-black placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-neutral-50"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsPosting(false)}
+              className="px-4 py-2 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black font-black text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase shadow-brutal-xs flex items-center gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Publish Post</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* CATEGORY FILTER TABS */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategoryFilter(cat)}
+            className={`px-3.5 py-1.5 rounded-xl border-2 border-black text-xs font-black transition-all shadow-brutal-xs whitespace-nowrap
+              ${
+                categoryFilter === cat
+                  ? "bg-black text-yellow-300"
+                  : "bg-white text-black hover:bg-neutral-100"
+              }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* COMMUNITY FEED GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Posts Feed (8 Cols) */}
+        <div className="lg:col-span-8 space-y-4">
+          {filteredPosts.map((post) => (
+            <div
+              key={post.id}
+              className="rounded-2xl border-[3px] border-black bg-white p-5 sm:p-6 shadow-brutal hover:-translate-y-0.5 transition-all space-y-3"
+            >
+              {/* Post Author & Header */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-xl border-2 border-black ${post.avatarColor} flex items-center justify-center font-display font-black text-black shadow-brutal-xs shrink-0`}
+                  >
+                    {post.author.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-display font-black text-sm text-black leading-tight">
+                      {post.author}
+                    </p>
+                    <p className="text-[10px] font-bold text-neutral-500">
+                      {post.role} · {post.time}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="px-2.5 py-0.5 rounded-full border border-black bg-purple-100 text-purple-900 text-[10px] font-black uppercase">
+                  {post.category}
+                </span>
+              </div>
+
+              {/* Title & Body */}
+              <h3 className="font-display font-black text-base text-black leading-snug">
+                {post.title}
+              </h3>
+              <p className="text-xs font-bold text-neutral-700 leading-relaxed whitespace-pre-line">
+                {post.content}
+              </p>
+
+              {/* Interaction Bar */}
+              <div className="pt-3 border-t-2 border-neutral-100 flex items-center justify-between text-xs font-bold text-neutral-600">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleToggleLike(post.id)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-black transition-all ${
+                      post.likedByUser
+                        ? "bg-yellow-300 text-black shadow-brutal-xs font-black"
+                        : "bg-white hover:bg-neutral-50 text-neutral-700"
+                    }`}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span>{post.likes}</span>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setActiveReplyPostId(activeReplyPostId === post.id ? null : post.id)
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-black bg-white hover:bg-neutral-50 text-neutral-700 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>{post.comments.length} Replies</span>
+                  </button>
+                </div>
+
+                <span className="text-[10px] text-neutral-400 font-mono">
+                  #{post.id.slice(-4)}
+                </span>
+              </div>
+
+              {/* Comments Section */}
+              {(post.comments.length > 0 || activeReplyPostId === post.id) && (
+                <div className="pt-3 space-y-2.5 border-t border-dashed border-neutral-300 bg-neutral-50 p-3.5 rounded-xl">
+                  {post.comments.map((comment) => (
+                    <div key={comment.id} className="flex items-start gap-2.5 text-xs">
+                      <div
+                        className={`w-6 h-6 rounded-lg border border-black ${comment.avatarColor} flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5`}
+                      >
+                        {comment.author.charAt(0)}
+                      </div>
+                      <div className="flex-1 bg-white p-2.5 rounded-xl border border-neutral-200">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="font-black text-[11px] text-black">
+                            {comment.author}
+                          </span>
+                          <span className="text-[9px] text-neutral-400">{comment.time}</span>
+                        </div>
+                        <p className="text-[11px] font-bold text-neutral-700">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add Reply Input */}
+                  {activeReplyPostId === post.id && (
+                    <div className="flex gap-2 pt-1">
+                      <input
+                        type="text"
+                        placeholder="Write a reply as student..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddComment(post.id)}
+                        className="flex-1 px-3 py-1.5 rounded-xl border-2 border-black text-xs font-bold text-black placeholder:text-neutral-400 bg-white"
+                      />
+                      <button
+                        onClick={() => handleAddComment(post.id)}
+                        className="px-3.5 py-1.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs"
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-        <div className="md:col-span-2 rounded-2xl border-[3px] border-black bg-purple-50 p-6 shadow-brutal">
-          <ShieldCheck className="w-6 h-6 text-purple-700 mb-3" />
-          <h3 className="font-black text-black text-lg mb-2 font-display">Student Showcase Board</h3>
-          <p className="text-xs font-bold text-neutral-500 mb-4">Share your first bug, first site, or first Hall of Fame acknowledgment with the community.</p>
-          <a href="https://instagram.com/thatraghavarora" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-black bg-purple-600 text-white font-black text-sm hover:bg-purple-700 transition-colors shadow-brutal-xs">
-            DM on Instagram <ArrowRight className="w-4 h-4" />
-          </a>
+
+        {/* Sidebar Info & Discord (4 Cols) */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="rounded-2xl border-[3px] border-black bg-neutral-950 p-5 shadow-brutal text-white">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+              <span className="font-black text-xs text-red-400 uppercase tracking-wider">
+                Live Community Session
+              </span>
+            </div>
+            <h3 className="font-display font-black text-base text-white mb-1">
+              Saturday Recon Walkthrough
+            </h3>
+            <p className="text-xs font-bold text-neutral-400 mb-4 leading-snug">
+              Every Saturday 7:00 PM IST on Discord. Ask live doubts directly with Raghav Arora.
+            </p>
+            <a
+              href="https://discord.gg/thatraghavarora"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-2.5 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-xs hover:bg-yellow-400 transition-colors shadow-brutal-xs"
+            >
+              Join Official Discord
+            </a>
+          </div>
+
+          <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal">
+            <h3 className="font-display font-black text-sm text-black mb-2 flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-purple-700" /> Community Rules
+            </h3>
+            <ul className="space-y-2 text-xs font-bold text-neutral-600">
+              <li className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                <span>Share real findings, questions, and achievements responsibly.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                <span>Do not post active 0-day exploits or sensitive private client data.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                <span>Help fellow students and maintain a supportive culture.</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
