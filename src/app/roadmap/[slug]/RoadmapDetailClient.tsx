@@ -294,11 +294,11 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
               {/* CTA below phases */}
               {mounted && !isPurchased && (
-                <div className="mt-6 p-5 rounded-2xl border-2 border-black bg-purple-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="mt-6 p-5 rounded-2xl border-2 border-black bg-neutral-950 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div>
-                    <p className="font-black text-sm text-black">Unlock all 6 phases with full topics + hands-on goals</p>
-                    <p className="text-xs font-bold text-neutral-600 mt-0.5">
-                      80+ topics, lab goals, YouTube recommendations, bug bounty guide & more
+                    <p className="font-black text-sm text-yellow-300">Unlock all 6 phases with full topics + hands-on goals</p>
+                    <p className="text-xs font-bold text-neutral-400 mt-0.5">
+                      80+ topics, lab goals, YouTube recommendations, bug bounty guide &amp; more
                     </p>
                   </div>
                   <button onClick={handleEnroll} className="btn-brutal btn-brutal-yellow shrink-0 px-5 py-2.5 text-sm font-black whitespace-nowrap">
