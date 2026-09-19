@@ -42,12 +42,14 @@ import {
   ThumbsUp,
   Send,
   MessageCircle,
-  Tag
+  Tag,
+  LogOut
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { courses, Course } from "@/data/siteData";
 import { roadmaps, RoadmapItem } from "@/data/roadmapData";
 import DashboardRoadmapViewer from "@/components/DashboardRoadmapViewer";
+import { logoutUser } from "@/lib/authClient";
 
 type Tab = "home" | "courses" | "roadmap" | "community" | "settings";
 
@@ -207,16 +209,28 @@ function DesktopSidebar({
       </nav>
 
       {/* Upgrade CTA */}
-      <div className="m-3 p-4 rounded-2xl border-2 border-yellow-300/30 bg-yellow-300/10 mb-5">
+      <div className="m-3 p-4 rounded-2xl border-2 border-yellow-300/30 bg-yellow-300/10 mb-2">
         <p className="font-black text-xs text-yellow-300 mb-1">🔓 Unlock More</p>
         <p className="text-[11px] font-bold text-neutral-400 leading-snug mb-3">
           Access premium roadmaps and 1:1 live guidance
         </p>
         <button
           onClick={() => onSelect("roadmap")}
-          className="block w-full py-2 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-xs hover:bg-yellow-400 transition-colors shadow-brutal-xs"
+          className="block w-full py-2 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black text-center font-black text-xs hover:bg-yellow-400 transition-colors shadow-brutal-xs cursor-pointer"
         >
           Explore Roadmaps
+        </button>
+      </div>
+
+      {/* Logout in Desktop Sidebar */}
+      <div className="p-3 pt-0 mb-4 shrink-0">
+        <button
+          onClick={() => logoutUser()}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-rose-300 hover:text-white bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800/80 transition-all shadow-brutal-xs cursor-pointer"
+          title="Sign out of student account"
+        >
+          <LogOut className="w-4 h-4 text-rose-400" />
+          <span>Sign Out</span>
         </button>
       </div>
     </aside>
@@ -2527,14 +2541,25 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          {/* Right: Avatar only */}
-          <button
-            onClick={() => setActiveTab("settings")}
-            className="w-10 h-10 rounded-xl border-2 border-black overflow-hidden shadow-brutal-xs bg-yellow-300 hover:bg-yellow-400 flex items-center justify-center transition-all hover:-translate-y-0.5 cursor-pointer"
-            title="User Profile & Settings"
-          >
-            <span className="font-display font-black text-base text-black">R</span>
-          </button>
+          {/* Right: Logout + Avatar */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => logoutUser()}
+              className="px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 text-rose-900 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm transition-all cursor-pointer"
+              title="Sign out of student account"
+              id="dashboard-header-logout-btn"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-700" />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className="w-10 h-10 rounded-xl border-2 border-black overflow-hidden shadow-brutal-xs bg-yellow-300 hover:bg-yellow-400 flex items-center justify-center transition-all hover:-translate-y-0.5 cursor-pointer"
+              title="User Profile & Settings"
+            >
+              <span className="font-display font-black text-base text-black">R</span>
+            </button>
+          </div>
         </header>
 
         {/* Main Content Area: pb-28 on mobile so bottom navbar never overlaps */}

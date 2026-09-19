@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, User, Menu, X, Terminal } from "lucide-react";
+import { Moon, Sun, User, Menu, X, Terminal, LogOut, LayoutDashboard } from "lucide-react";
+import { logoutUser } from "@/lib/authClient";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const pathname = usePathname();
 
   const navLinks = [
@@ -20,6 +22,22 @@ export default function Navbar() {
     { href: "/blog",    label: "Blog"     },
     { href: "/contact", label: "Contact"  },
   ];
+
+  // Check auth state for dynamically showing Dashboard / Logout
+  useEffect(() => {
+    fetch("/api/auth")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setCurrentUser(data.user);
+        } else {
+          setCurrentUser(null);
+        }
+      })
+      .catch(() => {
+        setCurrentUser(null);
+      });
+  }, [pathname]);
 
   // Check if a link is active — exact match for "/" else startsWith
   const isActive = (href: string) =>
@@ -105,13 +123,35 @@ export default function Navbar() {
 
 
 
-          <Link
-            href="/login"
-            className="btn-brutal btn-brutal-primary px-3.5 py-1.5 text-xs sm:text-sm font-black"
-            id="nav-auth-btn"
-          >
-            <User className="w-3.5 h-3.5" /> Login / Sign Up
-          </Link>
+          {currentUser ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className="btn-brutal btn-brutal-primary px-3 py-1.5 text-xs sm:text-sm font-black flex items-center gap-1.5"
+                id="nav-dashboard-btn"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={() => logoutUser()}
+                className="px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-brutal-xs hover:shadow-brutal-sm cursor-pointer"
+                title="Log Out"
+                id="nav-logout-btn"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="btn-brutal btn-brutal-primary px-3.5 py-1.5 text-xs sm:text-sm font-black"
+              id="nav-auth-btn"
+            >
+              <User className="w-3.5 h-3.5" /> Login / Sign Up
+            </Link>
+          )}
         </div>
 
         {/* Mobile: theme + hamburger */}
@@ -173,22 +213,35 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-2 border-2 border-black rounded-xl shadow-brutal-sm text-purple-400 font-black"
-              style={{ backgroundColor: "var(--bg-card)" }}
-            >
-              Student Portal
-            </Link>
 
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="btn-brutal btn-brutal-primary w-full py-3 mt-2 text-center"
-            >
-              <User className="w-4 h-4" /> Login / Sign Up
-            </Link>
+            {currentUser ? (
+              <div className="pt-2 space-y-2">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="btn-brutal btn-brutal-primary w-full py-3 text-center flex items-center justify-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" /> Go to Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logoutUser();
+                  }}
+                  className="w-full py-3 rounded-xl border-2 border-black bg-rose-500 text-white font-black text-sm uppercase tracking-wider shadow-brutal flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" /> Log Out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn-brutal btn-brutal-primary w-full py-3 mt-2 text-center flex items-center justify-center gap-2"
+              >
+                <User className="w-4 h-4" /> Login / Sign Up
+              </Link>
+            )}
           </div>
         </div>
       )}

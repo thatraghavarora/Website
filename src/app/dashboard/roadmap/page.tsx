@@ -13,12 +13,14 @@ import {
   Lock,
   ArrowRight,
   ShieldCheck,
-  Star
+  Star,
+  LogOut
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { roadmaps, RoadmapItem } from "@/data/roadmapData";
 import DashboardRoadmapViewer from "@/components/DashboardRoadmapViewer";
 import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
+import { logoutUser } from "@/lib/authClient";
 
 export default function DashboardRoadmapStandalonePage() {
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapItem | null>(null);
@@ -108,6 +110,14 @@ export default function DashboardRoadmapStandalonePage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => logoutUser()}
+              className="px-3 py-1.5 rounded-xl border-2 border-black bg-rose-100 hover:bg-rose-200 text-rose-900 font-mono text-xs font-black uppercase flex items-center gap-1.5 shadow-brutal-xs hover:shadow-brutal-sm transition-all cursor-pointer"
+              title="Sign out of student account"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-700" />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
             <span className="px-3 py-1 rounded-xl bg-purple-200 text-purple-900 border-2 border-black font-black text-xs uppercase shadow-brutal-xs">
               Student Study Portal
             </span>

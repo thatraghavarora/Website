@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import {
   createServerSupabaseClient,
   isSupabaseServerConfigured,
@@ -106,8 +107,31 @@ export async function POST(request: Request) {
     }
 
     if (action === "logout") {
-      await supabase.auth.signOut();
-      return NextResponse.json({ success: true, message: "Logged out successfully" });
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+
+      const response = NextResponse.json({ success: true, message: "Logged out successfully" });
+
+      try {
+        const cookieStore = await cookies();
+        for (const cookie of cookieStore.getAll()) {
+          if (
+            cookie.name.startsWith("sb-") ||
+            cookie.name.includes("auth") ||
+            cookie.name.includes("token")
+          ) {
+            response.cookies.set({
+              name: cookie.name,
+              value: "",
+              maxAge: 0,
+              path: "/",
+            });
+          }
+        }
+      } catch {}
+
+      return response;
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
