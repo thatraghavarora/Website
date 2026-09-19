@@ -254,3 +254,73 @@ export function validateUserRoleUpdate(role: unknown): { valid: boolean; error?:
   }
   return { valid: true, role: role as UserRole };
 }
+
+// ---------------------------------------------------------------------------
+// COMMUNITY POST VALIDATION
+// ---------------------------------------------------------------------------
+
+export const VALID_COMMUNITY_CATEGORIES = [
+  "Bug Bounty",
+  "Web Security",
+  "Doubt & Help",
+  "Achievement",
+  "General",
+] as const;
+
+export type CommunityCategory = (typeof VALID_COMMUNITY_CATEGORIES)[number];
+
+export function validateCommunityPostInput(body: unknown): {
+  valid: boolean;
+  errors: string[];
+  data?: {
+    title: string;
+    content: string;
+    category: CommunityCategory;
+    author: string;
+  };
+} {
+  const errors: string[] = [];
+
+  if (!body || typeof body !== "object") {
+    return { valid: false, errors: ["Request body must be a JSON object."] };
+  }
+
+  const record = body as Record<string, unknown>;
+
+  const title = sanitizeString(record.title, 150);
+  if (!title || title.length < 3) {
+    errors.push("Post title must be at least 3 characters.");
+  }
+
+  const content = sanitizeString(record.content, 4000);
+  if (!content || content.length < 5) {
+    errors.push("Post content must be at least 5 characters.");
+  }
+
+  let category: CommunityCategory = "General";
+  if (record.category && typeof record.category === "string") {
+    if (VALID_COMMUNITY_CATEGORIES.includes(record.category as CommunityCategory)) {
+      category = record.category as CommunityCategory;
+    } else {
+      errors.push(`Invalid category. Must be one of: ${VALID_COMMUNITY_CATEGORIES.join(", ")}`);
+    }
+  }
+
+  const author = sanitizeString(record.author, 60) || "Student";
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    errors: [],
+    data: {
+      title,
+      content,
+      category,
+      author,
+    },
+  };
+}
+

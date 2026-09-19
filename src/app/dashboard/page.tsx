@@ -1730,7 +1730,7 @@ function CommunityTab() {
   const [activeReplyPostId, setActiveReplyPostId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  // Load posts from localStorage on mount
+  // Load posts from Node.js Supabase API on mount (with local cache fallback)
   useEffect(() => {
     try {
       const stored = localStorage.getItem("student_community_posts");
@@ -1741,6 +1741,19 @@ function CommunityTab() {
         }
       }
     } catch {}
+
+    // Fetch live posts from Node.js API & Supabase
+    fetch("/api/community")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.posts && Array.isArray(data.posts) && data.posts.length > 0) {
+          setPosts(data.posts);
+          try {
+            localStorage.setItem("student_community_posts", JSON.stringify(data.posts));
+          } catch {}
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const savePosts = (updated: CommunityPost[]) => {
@@ -1750,7 +1763,7 @@ function CommunityTab() {
     } catch {}
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
 
@@ -1758,7 +1771,7 @@ function CommunityTab() {
     const colors = ["bg-yellow-300", "bg-purple-300", "bg-emerald-300", "bg-blue-300", "bg-amber-300"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const newPost: CommunityPost = {
+    const tempPost: CommunityPost = {
       id: `post-${Date.now()}`,
       author,
       role: "Student",
@@ -1767,53 +1780,81 @@ function CommunityTab() {
       title: newPostTitle.trim(),
       content: newPostContent.trim(),
       time: "Just now",
-      likes: 1,
-      likedByUser: true,
+      likes: 0,
+      likedByUser: false,
       comments: [],
     };
 
-    const updated = [newPost, ...posts];
+    // Optimistic UI update
+    const updated = [tempPost, ...posts];
     savePosts(updated);
     setNewPostTitle("");
     setNewPostContent("");
     setNewAuthorName("");
     setIsPosting(false);
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+
+    // Node.js API call -> Supabase
+    try {
+      const res = await fetch("/api/community", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: tempPost.title,
+          content: tempPost.content,
+          category: tempPost.category,
+          author: tempPost.author,
+        }),
+      });
+      const data = await res.json();
+      if (data.post && data.post.id) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === tempPost.id ? { ...p, id: data.post.id } : p))
+        );
+      }
+    } catch {}
   };
 
   const handleToggleLike = (postId: string) => {
+    let action = "like";
     const updated = posts.map((p) => {
       if (p.id === postId) {
         const isLiked = p.likedByUser;
+        action = isLiked ? "unlike" : "like";
         return {
           ...p,
-          likes: isLiked ? p.likes - 1 : p.likes + 1,
+          likes: isLiked ? Math.max(0, p.likes - 1) : p.likes + 1,
           likedByUser: !isLiked,
         };
       }
       return p;
     });
     savePosts(updated);
+
+    // Call Node.js API to persist like in Supabase
+    fetch(`/api/community?id=${postId}&action=${action}`, {
+      method: "PATCH",
+    }).catch(() => {});
   };
 
-  const handleAddComment = (postId: string) => {
+  const handleAddComment = async (postId: string) => {
     if (!replyText.trim()) return;
     const author = "You (Student)";
+    const commentContent = replyText.trim();
+
+    const tempComment: CommunityComment = {
+      id: `c-${Date.now()}`,
+      author,
+      avatarColor: "bg-yellow-300",
+      content: commentContent,
+      time: "Just now",
+    };
 
     const updated = posts.map((p) => {
       if (p.id === postId) {
         return {
           ...p,
-          comments: [
-            ...p.comments,
-            {
-              id: `c-${Date.now()}`,
-              author,
-              avatarColor: "bg-yellow-300",
-              content: replyText.trim(),
-              time: "Just now",
-            },
-          ],
+          comments: [...p.comments, tempComment],
         };
       }
       return p;
@@ -1822,6 +1863,19 @@ function CommunityTab() {
     savePosts(updated);
     setReplyText("");
     setActiveReplyPostId(null);
+
+    // Node.js API call -> Supabase
+    try {
+      await fetch("/api/community/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          content: commentContent,
+          author,
+        }),
+      });
+    } catch {}
   };
 
   const categories = ["All", "Bug Bounty", "Web Security", "Doubt & Help", "Achievement", "General"];

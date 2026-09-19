@@ -129,3 +129,57 @@ CREATE POLICY "Users can insert their own course progress."
 CREATE POLICY "Users can update their own course progress."
   ON public.course_progress FOR UPDATE
   USING (auth.uid() = user_id);
+
+
+-- 5. Create Community Posts Table (Student Forum & Discussions)
+CREATE TABLE IF NOT EXISTS public.community_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  author TEXT NOT NULL,
+  author_role TEXT DEFAULT 'Student',
+  avatar_color TEXT DEFAULT 'bg-yellow-300',
+  category TEXT NOT NULL CHECK (category IN ('Bug Bounty', 'Web Security', 'Doubt & Help', 'Achievement', 'General')),
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  likes INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on Community Posts
+ALTER TABLE public.community_posts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view community posts."
+  ON public.community_posts FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone or authenticated users can create community posts."
+  ON public.community_posts FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Anyone can update likes on community posts."
+  ON public.community_posts FOR UPDATE
+  USING (true);
+
+
+-- 6. Create Community Comments Table (Student Discussion Replies)
+CREATE TABLE IF NOT EXISTS public.community_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  author TEXT NOT NULL,
+  avatar_color TEXT DEFAULT 'bg-yellow-300',
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on Community Comments
+ALTER TABLE public.community_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view community comments."
+  ON public.community_comments FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone or authenticated users can create community comments."
+  ON public.community_comments FOR INSERT
+  WITH CHECK (true);
+
