@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Globe,
   Terminal,
@@ -15,7 +15,7 @@ import {
   Copy,
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
+  ChevronRight,
   Lock,
   Unlock,
   Zap,
@@ -25,14 +25,18 @@ import {
   Laptop,
   AlertCircle,
   FileText,
-  Play,
-  Share2,
-  CheckSquare,
-  Square,
   Flame,
   Clock,
   Layers,
-  Code2
+  Code2,
+  Menu,
+  X,
+  ArrowLeft,
+  ArrowRight,
+  ShieldAlert,
+  CheckSquare,
+  Square,
+  Bookmark
 } from "lucide-react";
 import {
   chapterRoadmapList,
@@ -55,12 +59,32 @@ export default function ChapterRoadmapViewer({
   onRequestUnlock,
   syncStatus,
 }: ChapterRoadmapViewerProps) {
-  const [activeChapterIndex, setActiveChapterIndex] = useState(0);
+  // Navigation State
+  const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
+  const [selectedLessonId, setSelectedLessonId] = useState<string>(
+    chapterRoadmapList[0]?.lessons[0]?.id || "l-1-1"
+  );
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedLessons, setExpandedLessons] = useState<Record<string, boolean>>({});
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({
+    0: true,
+  });
 
-  const activeChapter = chapterRoadmapList[activeChapterIndex] || chapterRoadmapList[0];
+  // Current Active Chapter & Lesson
+  const activeChapter = chapterRoadmapList[selectedChapterIndex] || chapterRoadmapList[0];
+  const activeLesson =
+    activeChapter.lessons.find((l) => l.id === selectedLessonId) ||
+    activeChapter.lessons[0] ||
+    chapterRoadmapList[0].lessons[0];
+
+  // Auto-expand current chapter when selected
+  useEffect(() => {
+    setExpandedChapters((prev) => ({
+      ...prev,
+      [selectedChapterIndex]: true,
+    }));
+  }, [selectedChapterIndex]);
 
   // Copy helper
   const handleCopy = (text: string) => {
@@ -69,675 +93,726 @@ export default function ChapterRoadmapViewer({
     setTimeout(() => setCopiedText(null), 2000);
   };
 
-  // Toggle single lesson
-  const toggleLesson = (lessonId: string) => {
-    setExpandedLessons((prev) => ({
-      ...prev,
-      [lessonId]: !prev[lessonId],
-    }));
+  // Flatten all lessons across all chapters for sequential prev/next navigation
+  const allFlattenedLessons = useMemo(() => {
+    const list: { chapterIndex: number; lesson: RoadmapLesson }[] = [];
+    chapterRoadmapList.forEach((ch, chIdx) => {
+      ch.lessons.forEach((lesson) => {
+        list.push({ chapterIndex: chIdx, lesson });
+      });
+    });
+    return list;
+  }, []);
+
+  const currentFlatIndex = allFlattenedLessons.findIndex(
+    (item) => item.lesson.id === activeLesson.id
+  );
+  const prevLessonItem = currentFlatIndex > 0 ? allFlattenedLessons[currentFlatIndex - 1] : null;
+  const nextLessonItem =
+    currentFlatIndex >= 0 && currentFlatIndex < allFlattenedLessons.length - 1
+      ? allFlattenedLessons[currentFlatIndex + 1]
+      : null;
+
+  const navigateToLesson = (chapterIdx: number, lessonId: string) => {
+    setSelectedChapterIndex(chapterIdx);
+    setSelectedLessonId(lessonId);
+    setMobileSidebarOpen(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 180, behavior: "smooth" });
+    }
   };
 
-  // Expand / Collapse all in active chapter
-  const toggleAllLessonsInChapter = (expand: boolean) => {
-    const updated: Record<string, boolean> = { ...expandedLessons };
-    activeChapter.lessons.forEach((l) => {
-      updated[l.id] = expand;
-    });
-    setExpandedLessons(updated);
-  };
-
-  // Filter chapters/lessons if search is active
-  const filteredChapters = useMemo(() => {
-    if (!searchQuery.trim()) return chapterRoadmapList;
-    const q = searchQuery.toLowerCase();
-    return chapterRoadmapList.filter((ch) => {
-      const inTitle = ch.title.toLowerCase().includes(q) || ch.subtitle.toLowerCase().includes(q);
-      const inLessons = ch.lessons.some(
-        (l) =>
-          l.title.toLowerCase().includes(q) ||
-          l.summary.toLowerCase().includes(q) ||
-          l.keyTopics.some((t) => t.toLowerCase().includes(q))
-      );
-      const inChecklist = ch.checklist.some((c) => c.label.toLowerCase().includes(q));
-      return inTitle || inLessons || inChecklist;
-    });
-  }, [searchQuery]);
-
-  // Calculate stats for current chapter
-  const chapterChecklistTotal = activeChapter.checklist.length;
-  const chapterChecklistDone = activeChapter.checklist.filter((item) =>
-    completedItems.includes(item.id)
-  ).length;
-  const chapterProgressPercent =
-    chapterChecklistTotal > 0
-      ? Math.round((chapterChecklistDone / chapterChecklistTotal) * 100)
-      : 0;
-
-  // Calculate overall curriculum stats
-  const totalAllChecklistItems = useMemo(
+  // Progress Calculations
+  const totalAllLessons = allFlattenedLessons.length;
+  const totalAllChecklists = useMemo(
     () => chapterRoadmapList.reduce((acc, ch) => acc + ch.checklist.length, 0),
     []
   );
-  const totalAllCompleted = useMemo(
-    () =>
-      chapterRoadmapList.reduce(
-        (acc, ch) =>
-          acc + ch.checklist.filter((item) => completedItems.includes(item.id)).length,
-        0
-      ),
-    [completedItems]
-  );
-  const overallProgressPercent =
-    totalAllChecklistItems > 0
-      ? Math.round((totalAllCompleted / totalAllChecklistItems) * 100)
+  const totalCompletedCount = useMemo(() => {
+    let count = 0;
+    allFlattenedLessons.forEach(({ lesson }) => {
+      if (completedItems.includes(lesson.id)) count++;
+    });
+    chapterRoadmapList.forEach((ch) => {
+      ch.checklist.forEach((item) => {
+        if (completedItems.includes(item.id)) count++;
+      });
+    });
+    return count;
+  }, [allFlattenedLessons, completedItems]);
+
+  const totalTrackableItems = totalAllLessons + totalAllChecklists;
+  const overallPercentage =
+    totalTrackableItems > 0
+      ? Math.min(100, Math.round((totalCompletedCount / totalTrackableItems) * 100))
       : 0;
+
+  // Filter lessons based on search query
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase();
+    const matches: { chapterIndex: number; lesson: RoadmapLesson }[] = [];
+    chapterRoadmapList.forEach((ch, chIdx) => {
+      ch.lessons.forEach((l) => {
+        if (
+          l.title.toLowerCase().includes(q) ||
+          l.summary.toLowerCase().includes(q) ||
+          l.keyTopics.some((t) => t.toLowerCase().includes(q)) ||
+          (l.terminalCommands && l.terminalCommands.some((c) => c.toLowerCase().includes(q)))
+        ) {
+          matches.push({ chapterIndex: chIdx, lesson: l });
+        }
+      });
+    });
+    return matches;
+  }, [searchQuery]);
 
   // Icon resolver
   const getChapterIcon = (iconName: string) => {
     switch (iconName) {
       case "Globe":
-        return <Globe className="w-5 h-5 text-blue-600" />;
+        return <Globe className="w-4 h-4 text-blue-600 shrink-0" />;
       case "Terminal":
-        return <Terminal className="w-5 h-5 text-emerald-600" />;
+        return <Terminal className="w-4 h-4 text-emerald-600 shrink-0" />;
       case "Search":
-        return <Search className="w-5 h-5 text-indigo-600" />;
+        return <Search className="w-4 h-4 text-indigo-600 shrink-0" />;
       case "Target":
-        return <Target className="w-5 h-5 text-purple-600" />;
+        return <Target className="w-4 h-4 text-purple-600 shrink-0" />;
       case "Wrench":
-        return <Wrench className="w-5 h-5 text-amber-600" />;
+        return <Wrench className="w-4 h-4 text-amber-600 shrink-0" />;
       case "Bug":
-        return <Bug className="w-5 h-5 text-red-600" />;
+        return <Bug className="w-4 h-4 text-red-600 shrink-0" />;
       case "Flag":
-        return <Flag className="w-5 h-5 text-teal-600" />;
+        return <Flag className="w-4 h-4 text-teal-600 shrink-0" />;
       case "Award":
-        return <Award className="w-5 h-5 text-yellow-600" />;
+        return <Award className="w-4 h-4 text-yellow-600 shrink-0" />;
       default:
-        return <BookOpen className="w-5 h-5 text-black" />;
+        return <BookOpen className="w-4 h-4 text-black shrink-0" />;
     }
   };
 
-  const getDifficultyBadgeColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner":
-        return "bg-emerald-100 text-emerald-900 border-emerald-400";
-      case "Intermediate":
-        return "bg-blue-100 text-blue-900 border-blue-400";
-      case "Advanced":
-        return "bg-purple-100 text-purple-900 border-purple-400";
-      case "Expert":
-        return "bg-rose-100 text-rose-900 border-rose-400";
-      default:
-        return "bg-gray-100 text-gray-900 border-gray-400";
-    }
-  };
+  const isCurrentLessonDone = completedItems.includes(activeLesson.id);
 
   return (
-    <div className="w-full space-y-6 font-sans">
-      {/* Top Banner with Overall Stats & Search */}
-      <div className="bg-[#fffdf0] border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_#000]">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="w-full font-sans">
+      {/* ── TOP HEADER / PROGRESS BAR ───────────────────────────────── */}
+      <div className="bg-[#fffdf0] border-[3px] border-black p-4 sm:p-5 mb-6 shadow-brutal">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span className="px-3 py-1 bg-black text-white font-mono font-bold text-xs uppercase tracking-wider rounded-sm flex items-center gap-1.5">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="px-2.5 py-0.5 bg-black text-white font-mono font-bold text-xs uppercase tracking-wider rounded-md flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-yellow-400" />
-                Deep Chapter Curriculum
+                Cyber Security Docs
               </span>
-              <span className="px-3 py-1 bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black">
-                10 Chapters • 60+ Lessons • Hands-On Labs
+              <span className="px-2.5 py-0.5 bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border border-black rounded-md">
+                10 Chapters • 60+ Lessons • Interactive Labs
               </span>
               {syncStatus && (
-                <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 border border-emerald-400 rounded-sm">
+                <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 border border-emerald-400 rounded-md">
                   {syncStatus}
                 </span>
               )}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
-              Web Penetration Testing & Ethical Hacking Masterclass
-            </h2>
-            <p className="text-gray-700 text-sm mt-1 max-w-3xl">
-              Zero-to-Hero structured chapter breakdown. Each chapter contains granular lessons, command lines, hands-on lab attack scenarios, and live verifiable checklists.
-            </p>
+            <h1 className="text-xl sm:text-2xl font-black text-black tracking-tight">
+              Complete Offensive Cyber Security Roadmap &amp; Knowledge Base
+            </h1>
           </div>
 
-          {/* Overall Progress Widget */}
-          <div className="bg-white border-3 border-black p-4 min-w-[240px] shadow-[4px_4px_0px_0px_#000]">
+          {/* Overall Progress Indicator */}
+          <div className="bg-white border-2 border-black p-3 min-w-[240px] shadow-brutal-xs rounded-xl">
             <div className="flex items-center justify-between text-xs font-black uppercase mb-1">
-              <span>Overall Progress</span>
-              <span className="font-mono text-emerald-600 font-black">{overallProgressPercent}%</span>
+              <span className="text-neutral-700">Course Progress</span>
+              <span className="font-mono text-emerald-600 font-black">{overallPercentage}%</span>
             </div>
-            <div className="w-full bg-gray-200 h-3.5 border-2 border-black overflow-hidden mb-2">
+            <div className="w-full bg-neutral-200 h-2.5 border border-black rounded-full overflow-hidden mb-1.5">
               <div
-                className="bg-emerald-500 h-full transition-all duration-300 border-r-2 border-black"
-                style={{ width: `${overallProgressPercent}%` }}
+                className="bg-emerald-500 h-full transition-all duration-300"
+                style={{ width: `${overallPercentage}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] font-mono font-bold text-gray-600">
-              <span>Completed: {totalAllCompleted} / {totalAllChecklistItems}</span>
-              <span className="text-black font-black">10 Chapters</span>
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold text-neutral-500">
+              <span>{totalCompletedCount} items completed</span>
+              <span className="text-black font-black">10 Master Chapters</span>
             </div>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mt-4 pt-4 border-t-2 border-black/20 flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search chapters, lessons, tools, bugs (e.g. 'Wireshark', 'Burp Suite', 'SSRF', 'SQLi')..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-black font-medium text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-          </div>
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 font-mono text-xs font-bold border-2 border-black text-black"
-            >
-              Clear
-            </button>
-          )}
+        {/* Mobile Sidebar Toggle Button */}
+        <div className="mt-3 pt-3 border-t border-black/15 flex lg:hidden items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(true)}
+            className="flex-1 py-2 px-3 bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider border-2 border-black rounded-xl flex items-center justify-center gap-2 shadow-brutal-xs active:scale-95 transition-all"
+          >
+            <Menu className="w-4 h-4" />
+            <span>Open Chapters Menu ({chapterRoadmapList.length})</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Chapter Navigation + Chapter Content Grid */}
+      {/* ── MAIN DOCS SPLIT-LAYOUT (LEFT SIDEBAR / RIGHT DOCS) ──────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Chapters Navigation List */}
-        <div className="lg:col-span-4 space-y-2.5">
-          <div className="bg-black text-white p-3 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-between border-2 border-black">
-            <span className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-yellow-400" />
-              Chapter Directory ({filteredChapters.length})
+        {/* ══ LEFT SIDEBAR: CHAPTERS & LESSONS DIRECTORY ══════════════ */}
+        <aside
+          className={`
+            fixed inset-y-0 left-0 z-50 w-80 bg-white border-r-[3px] border-black p-4 flex flex-col transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:col-span-4 lg:border-[3px] lg:rounded-2xl lg:shadow-brutal lg:translate-x-0
+            ${mobileSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"}
+          `}
+        >
+          {/* Mobile Close Button */}
+          <div className="flex lg:hidden items-center justify-between pb-3 border-b-2 border-black mb-3">
+            <span className="font-display font-black text-sm uppercase tracking-wider text-black">
+              Chapters Index
             </span>
-            <span className="text-yellow-400 text-[11px]">Click to view</span>
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(false)}
+              className="p-1.5 rounded-lg border-2 border-black bg-neutral-100 hover:bg-neutral-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="space-y-2 max-h-[780px] overflow-y-auto pr-1">
-            {filteredChapters.map((chapter) => {
-              const chIndex = chapterRoadmapList.findIndex((c) => c.id === chapter.id);
-              const isSelected = chIndex === activeChapterIndex;
-              const chCompleted = chapter.checklist.filter((item) =>
-                completedItems.includes(item.id)
-              ).length;
-              const chTotal = chapter.checklist.length;
-              const chPercent = chTotal > 0 ? Math.round((chCompleted / chTotal) * 100) : 0;
+          {/* Search Box */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Search lessons, tools, bugs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 bg-neutral-50 border-2 border-black rounded-xl font-medium text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-yellow-400"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-black text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
 
-              return (
-                <button
-                  key={chapter.id}
-                  onClick={() => setActiveChapterIndex(chIndex)}
-                  className={`w-full text-left p-3.5 border-3 border-black transition-all relative ${
-                    isSelected
-                      ? "bg-yellow-300 shadow-[4px_4px_0px_0px_#000] -translate-y-0.5"
-                      : "bg-white hover:bg-yellow-50 hover:shadow-[2px_2px_0px_0px_#000]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-white border-2 border-black rounded-sm">
-                        {getChapterIcon(chapter.iconName)}
-                      </div>
-                      <div>
-                        <span className="font-mono text-[11px] font-black uppercase text-gray-700 block">
-                          Chapter {chapter.chapterNumber}
-                        </span>
-                        <h4 className="font-black text-sm text-black line-clamp-1 leading-tight">
-                          {chapter.title}
-                        </h4>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 border border-black rounded-sm shrink-0 ${getDifficultyBadgeColor(
-                        chapter.difficulty
-                      )}`}
-                    >
-                      {chapter.difficulty}
-                    </span>
-                  </div>
+          {/* Sidebar Header */}
+          <div className="bg-black text-white px-3 py-2 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider flex items-center justify-between mb-2">
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-yellow-400" />
+              <span>Table of Contents</span>
+            </span>
+            <span className="text-yellow-300 font-black">
+              {chapterRoadmapList.length} Chapters
+            </span>
+          </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-black/15 flex items-center justify-between text-xs font-mono">
-                    <span className="text-gray-600 text-[11px] flex items-center gap-1">
-                      <BookOpen className="w-3 h-3 text-black" />
-                      {chapter.lessons.length} Lessons
-                    </span>
-                    <span className="text-gray-600 text-[11px] flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-black" />
-                      {chapter.duration}
-                    </span>
-                    <span
-                      className={`text-[11px] font-black ${
-                        chPercent === 100 ? "text-emerald-700" : "text-black"
+          {/* Search Results Mode */}
+          {searchResults ? (
+            <div className="flex-1 overflow-y-auto space-y-1.5 max-h-[70vh] pr-1">
+              <p className="text-[11px] font-bold text-neutral-500 mb-2">
+                Found {searchResults.length} lessons matching &quot;{searchQuery}&quot;:
+              </p>
+              {searchResults.length === 0 ? (
+                <div className="p-4 text-center text-xs text-neutral-500 bg-neutral-50 rounded-xl border border-neutral-200">
+                  No matching lessons found.
+                </div>
+              ) : (
+                searchResults.map(({ chapterIndex, lesson }) => {
+                  const isSelected = activeLesson.id === lesson.id;
+                  const isDone = completedItems.includes(lesson.id);
+                  return (
+                    <button
+                      key={lesson.id}
+                      type="button"
+                      onClick={() => navigateToLesson(chapterIndex, lesson.id)}
+                      className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-start gap-2 ${
+                        isSelected
+                          ? "bg-yellow-300 border-black shadow-brutal-xs font-black text-black"
+                          : "bg-white border-neutral-200 hover:border-black text-neutral-800"
                       }`}
                     >
-                      {chPercent}% Done
-                    </span>
-                  </div>
-
-                  {/* Micro Progress Bar */}
-                  <div className="w-full bg-gray-200 h-1.5 border border-black overflow-hidden mt-1.5">
-                    <div
-                      className="bg-emerald-500 h-full transition-all duration-300"
-                      style={{ width: `${chPercent}%` }}
-                    />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Active Chapter Deep View */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Chapter Header Card */}
-          <div className="bg-white border-4 border-black p-6 shadow-[6px_6px_0px_0px_#000]">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-black text-yellow-400 font-mono font-black text-xs uppercase tracking-wider border border-black">
-                  CHAPTER {activeChapter.chapterNumber} OF 10
-                </span>
-                <span
-                  className={`text-xs font-black uppercase px-2.5 py-1 border-2 border-black ${getDifficultyBadgeColor(
-                    activeChapter.difficulty
-                  )}`}
-                >
-                  {activeChapter.difficulty}
-                </span>
-                <span className="text-xs font-mono font-bold bg-gray-100 text-gray-800 px-2.5 py-1 border border-black flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-black" />
-                  {activeChapter.duration}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleAllLessonsInChapter(true)}
-                  className="px-2.5 py-1 bg-white hover:bg-gray-100 border-2 border-black font-mono text-[11px] font-bold text-black"
-                >
-                  Expand All
-                </button>
-                <button
-                  onClick={() => toggleAllLessonsInChapter(false)}
-                  className="px-2.5 py-1 bg-white hover:bg-gray-100 border-2 border-black font-mono text-[11px] font-bold text-black"
-                >
-                  Collapse All
-                </button>
-              </div>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-snug">
-              {activeChapter.title}
-            </h1>
-            <p className="text-gray-600 font-mono text-xs sm:text-sm mt-1 font-semibold">
-              {activeChapter.subtitle}
-            </p>
-            <p className="text-gray-800 text-sm mt-3 leading-relaxed bg-amber-50/70 p-3 border-l-4 border-yellow-500 font-medium">
-              {activeChapter.description}
-            </p>
-
-            {/* Chapter Checklist Progress Bar */}
-            <div className="mt-4 pt-4 border-t-2 border-black/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-mono text-xs font-bold text-black">
-                <CheckSquare className="w-4 h-4 text-emerald-600" />
-                <span>Chapter Mastery: {chapterChecklistDone} / {chapterChecklistTotal} completed</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-36 bg-gray-200 h-3 border-2 border-black overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-full transition-all duration-300"
-                    style={{ width: `${chapterProgressPercent}%` }}
-                  />
-                </div>
-                <span className="font-mono text-xs font-black text-black">
-                  {chapterProgressPercent}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Locked Overlay Warning if visitor hasn't purchased */}
-          {!isUnlocked && (
-            <div className="bg-rose-50 border-4 border-black p-5 shadow-[4px_4px_0px_0px_#000] flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-rose-500 text-white border-2 border-black">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-black text-base text-black">Full Chapter Content Locked</h4>
-                  <p className="text-xs text-gray-700">
-                    Unlock all 10 chapters, terminal exploits, hands-on lab guides, and interactive checklists.
-                  </p>
-                </div>
-              </div>
-              {onRequestUnlock && (
-                <button
-                  onClick={onRequestUnlock}
-                  className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-sm border-2 border-black shadow-[2px_2px_0px_0px_#000] shrink-0"
-                >
-                  Unlock Full Roadmap
-                </button>
+                      <span className="mt-0.5 shrink-0">
+                        {isDone ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <span className="w-3.5 h-3.5 rounded-full border border-neutral-400 inline-block" />
+                        )}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold line-clamp-1 leading-tight">
+                          {lesson.lessonNumber} {lesson.title}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 line-clamp-1 mt-0.5">
+                          Chapter {chapterRoadmapList[chapterIndex].chapterNumber}: {chapterRoadmapList[chapterIndex].title}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })
               )}
             </div>
-          )}
-
-          {/* Section: Granular Lessons Accordion */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-black uppercase tracking-wide flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-black" />
-                Structured Lessons ({activeChapter.lessons.length})
-              </h3>
-              <span className="text-xs font-mono text-gray-600 font-bold">
-                Step-by-step technical breakdown
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {activeChapter.lessons.map((lesson) => {
-                const isExpanded = expandedLessons[lesson.id] ?? false;
+          ) : (
+            /* Chapters Accordion Tree */
+            <div className="flex-1 overflow-y-auto space-y-2 max-h-[75vh] pr-1">
+              {chapterRoadmapList.map((chapter, chIdx) => {
+                const isChapterActive = selectedChapterIndex === chIdx;
+                const isExpanded = expandedChapters[chIdx] ?? false;
+                const chapterCompletedLessons = chapter.lessons.filter((l) =>
+                  completedItems.includes(l.id)
+                ).length;
+                const isChapterDone =
+                  chapter.lessons.length > 0 &&
+                  chapterCompletedLessons === chapter.lessons.length;
 
                 return (
                   <div
-                    key={lesson.id}
-                    className="bg-white border-3 border-black shadow-[3px_3px_0px_0px_#000] transition-all"
+                    key={chapter.id}
+                    className={`rounded-xl border-2 transition-all overflow-hidden ${
+                      isChapterActive
+                        ? "border-black bg-neutral-50 shadow-brutal-xs"
+                        : "border-neutral-200 bg-white hover:border-neutral-400"
+                    }`}
                   >
-                    {/* Lesson Header Clickable */}
+                    {/* Chapter Header Toggle */}
                     <button
-                      onClick={() => toggleLesson(lesson.id)}
-                      className="w-full text-left p-4 flex items-center justify-between gap-3 hover:bg-yellow-50/50 transition-colors"
+                      type="button"
+                      onClick={() => {
+                        setSelectedChapterIndex(chIdx);
+                        setExpandedChapters((prev) => ({
+                          ...prev,
+                          [chIdx]: !prev[chIdx],
+                        }));
+                      }}
+                      className={`w-full p-2.5 text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                        isChapterActive ? "bg-neutral-100" : "hover:bg-neutral-50"
+                      }`}
                     >
-                      <div className="flex items-start sm:items-center gap-3">
-                        <span className="px-2.5 py-1 bg-black text-white font-mono font-bold text-xs border border-black shrink-0">
-                          {lesson.lessonNumber}
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-black text-base text-black">{lesson.title}</h4>
-                            {lesson.badge && (
-                              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-yellow-200 text-black border border-black">
-                                {lesson.badge}
+                      <div className="flex items-center gap-2 min-w-0">
+                        {getChapterIcon(chapter.iconName)}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono font-black uppercase text-neutral-500">
+                              Ch {chapter.chapterNumber}
+                            </span>
+                            {isChapterDone && (
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded">
+                                Done
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{lesson.summary}</p>
+                          <p
+                            className={`text-xs font-black truncate leading-tight ${
+                              isChapterActive ? "text-black" : "text-neutral-800"
+                            }`}
+                          >
+                            {chapter.title}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-mono text-xs font-bold text-gray-500 hidden sm:inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {lesson.duration}
+                      <div className="shrink-0 flex items-center gap-1.5 text-neutral-400">
+                        <span className="text-[10px] font-mono font-bold">
+                          {chapterCompletedLessons}/{chapter.lessons.length}
                         </span>
-                        <div className="p-1 bg-gray-100 border border-black">
-                          {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-black" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-black" />
-                          )}
-                        </div>
+                        <ChevronRight
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            isExpanded ? "rotate-90 text-black" : ""
+                          }`}
+                        />
                       </div>
                     </button>
 
-                    {/* Lesson Body Content */}
+                    {/* Chapter Lessons List */}
                     {isExpanded && (
-                      <div className="p-4 pt-2 border-t-2 border-black/20 bg-stone-50 space-y-4">
-                        {/* Summary */}
-                        <div className="bg-white p-3 border-2 border-black">
-                          <span className="font-mono text-[11px] font-black uppercase text-gray-500 block mb-1">
-                            Lesson Overview
-                          </span>
-                          <p className="text-xs sm:text-sm text-gray-800 leading-relaxed font-medium">
-                            {lesson.summary}
-                          </p>
-                        </div>
+                      <div className="p-1.5 pt-0 space-y-1 bg-white border-t border-neutral-200">
+                        {chapter.lessons.map((lesson) => {
+                          const isLessonSelected = activeLesson.id === lesson.id;
+                          const isLessonDone = completedItems.includes(lesson.id);
 
-                        {/* Key Topics Covered */}
-                        {lesson.keyTopics && lesson.keyTopics.length > 0 && (
-                          <div className="bg-white p-3 border-2 border-black">
-                            <span className="font-mono text-[11px] font-black uppercase text-black block mb-2 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
-                              Key Concepts & Attack Mechanics
-                            </span>
-                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {lesson.keyTopics.map((topic, tidx) => (
-                                <li
-                                  key={tidx}
-                                  className="flex items-start gap-2 text-xs font-semibold text-gray-800"
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full bg-black mt-1.5 shrink-0" />
-                                  <span>{topic}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          return (
+                            <button
+                              key={lesson.id}
+                              type="button"
+                              onClick={() => navigateToLesson(chIdx, lesson.id)}
+                              className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all flex items-center justify-between gap-2 cursor-pointer ${
+                                isLessonSelected
+                                  ? "bg-yellow-300 text-black font-black border-2 border-black shadow-brutal-xs"
+                                  : "text-neutral-700 hover:bg-neutral-100 font-semibold"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="shrink-0">
+                                  {isLessonDone ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100" />
+                                  ) : (
+                                    <span
+                                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                        isLessonSelected ? "border-black bg-white" : "border-neutral-300"
+                                      }`}
+                                    />
+                                  )}
+                                </span>
+                                <span className="truncate leading-tight">
+                                  {lesson.lessonNumber} {lesson.title}
+                                </span>
+                              </div>
 
-                        {/* Terminal Commands / Exploits */}
-                        {lesson.terminalCommands && lesson.terminalCommands.length > 0 && (
-                          <div className="space-y-2">
-                            <span className="font-mono text-[11px] font-black uppercase text-emerald-800 block flex items-center gap-1.5">
-                              <Terminal className="w-3.5 h-3.5 text-emerald-700" />
-                              Offensive Terminal Commands & Syntax
-                            </span>
-                            <div className="space-y-1.5">
-                              {lesson.terminalCommands.map((cmd, cidx) => (
-                                <div
-                                  key={cidx}
-                                  className="bg-black text-emerald-400 font-mono text-xs p-3 border-2 border-black flex items-center justify-between gap-3 overflow-x-auto"
-                                >
-                                  <span className="select-all break-all whitespace-pre-wrap">{cmd}</span>
-                                  <button
-                                    onClick={() => handleCopy(cmd)}
-                                    className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-[11px] border border-zinc-600 flex items-center gap-1 shrink-0"
-                                    title="Copy Command"
-                                  >
-                                    {copiedText === cmd ? (
-                                      <>
-                                        <Check className="w-3 h-3 text-emerald-400" />
-                                        <span>Copied</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-3 h-3" />
-                                        <span>Copy</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Pro Tips / Insider Insights */}
-                        {lesson.proTips && lesson.proTips.length > 0 && (
-                          <div className="bg-amber-100/70 border-2 border-black p-3 space-y-1.5">
-                            <span className="font-mono text-[11px] font-black uppercase text-amber-900 block flex items-center gap-1.5">
-                              <Zap className="w-3.5 h-3.5 text-amber-600" />
-                              Hacker Pro-Tip & Bug Bounty Intel
-                            </span>
-                            {lesson.proTips.map((tip, pidx) => (
-                              <p key={pidx} className="text-xs font-semibold text-amber-950 flex items-start gap-2">
-                                <span className="text-amber-700 font-bold shrink-0">⚡</span>
-                                <span>{tip}</span>
-                              </p>
-                            ))}
-                          </div>
-                        )}
+                              <span
+                                className={`text-[10px] font-mono shrink-0 ${
+                                  isLessonSelected ? "text-black font-bold" : "text-neutral-400"
+                                }`}
+                              >
+                                {lesson.duration}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
-          </div>
+          )}
+        </aside>
 
-          {/* Section: Hands-On Lab Objective Card */}
-          {activeChapter.handsOnLab && (
-            <div className="bg-[#111] text-white border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_#000] space-y-4">
+        {/* Mobile Backdrop Overlay */}
+        {mobileSidebarOpen && (
+          <div
+            onClick={() => setMobileSidebarOpen(false)}
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          />
+        )}
+
+        {/* ══ RIGHT CONTENT: CLEAN DOCS READING & LAB VIEW ══════════════ */}
+        <main className="lg:col-span-8 space-y-6">
+          <article className="bg-white border-[3px] border-black rounded-2xl shadow-brutal p-6 sm:p-8 space-y-8">
+            {/* Docs Breadcrumb & Lesson Top Meta */}
+            <div className="border-b-2 border-neutral-200 pb-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-neutral-500 flex-wrap">
+                <span>Cyber Security</span>
+                <span>/</span>
+                <span className="text-black">Chapter {activeChapter.chapterNumber}: {activeChapter.title}</span>
+                <span>/</span>
+                <span className="text-purple-700 font-black">Lesson {activeLesson.lessonNumber}</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full border border-black bg-blue-100 text-blue-900 text-xs font-black uppercase">
+                      {activeLesson.badge || activeChapter.difficulty}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full border border-black bg-neutral-100 text-neutral-800 text-xs font-mono font-bold flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {activeLesson.duration}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full border border-black bg-purple-100 text-purple-900 text-xs font-mono font-bold">
+                      Difficulty: {activeChapter.difficulty}
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-tight">
+                    {activeLesson.lessonNumber} — {activeLesson.title}
+                  </h2>
+                </div>
+
+                {/* Mark Complete Action Button */}
+                <button
+                  type="button"
+                  onClick={() => onToggleItem && onToggleItem(activeLesson.id)}
+                  className={`px-4 py-2.5 rounded-xl border-2 border-black font-mono text-xs font-black uppercase flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-brutal-xs active:scale-95 ${
+                    isCurrentLessonDone
+                      ? "bg-emerald-400 text-black hover:bg-emerald-500"
+                      : "bg-yellow-300 text-black hover:bg-yellow-400"
+                  }`}
+                >
+                  <Check className="w-4 h-4 stroke-[3]" />
+                  <span>{isCurrentLessonDone ? "Lesson Completed ✓" : "Mark as Completed"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Docs Section 1: Summary & Theoretical Foundation */}
+            <section className="space-y-3">
+              <div className="flex items-center gap-2 text-black">
+                <BookOpen className="w-5 h-5 text-purple-600" />
+                <h3 className="font-display font-black text-lg uppercase tracking-tight">
+                  Overview &amp; Concept Architecture
+                </h3>
+              </div>
+              <p className="text-neutral-800 text-base sm:text-lg leading-relaxed bg-neutral-50 p-5 rounded-xl border-2 border-neutral-200">
+                {activeLesson.summary}
+              </p>
+            </section>
+
+            {/* Docs Section 2: Core Attack Concepts & Mechanics */}
+            <section className="space-y-3">
+              <div className="flex items-center gap-2 text-black">
+                <Target className="w-5 h-5 text-red-600" />
+                <h3 className="font-display font-black text-lg uppercase tracking-tight">
+                  Core Attack Vectors &amp; Technical Analysis
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                {activeLesson.keyTopics.map((topic, idx) => {
+                  const isDone = completedItems.includes(topic);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => onToggleItem && onToggleItem(topic)}
+                      className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3 select-none ${
+                        isDone
+                          ? "bg-emerald-50 border-emerald-600 shadow-brutal-xs"
+                          : "bg-white border-neutral-300 hover:border-black shadow-sm"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                          isDone
+                            ? "bg-emerald-500 border-emerald-700 text-white"
+                            : "bg-neutral-100 border-neutral-400 hover:border-black"
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                      <span
+                        className={`text-sm font-bold leading-relaxed ${
+                          isDone ? "text-emerald-950 line-through opacity-75" : "text-black"
+                        }`}
+                      >
+                        {topic}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Docs Section 3: Live Terminal Commands & Payloads */}
+            {activeLesson.terminalCommands && activeLesson.terminalCommands.length > 0 && (
+              <section className="space-y-3">
+                <div className="flex items-center gap-2 text-black">
+                  <Terminal className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-display font-black text-lg uppercase tracking-tight">
+                    Terminal Commands &amp; Exploit Payloads
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  {activeLesson.terminalCommands.map((cmd, idx) => {
+                    const isCopied = copiedText === cmd;
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-xl border-2 border-black bg-neutral-950 overflow-hidden shadow-brutal-xs"
+                      >
+                        {/* Terminal Header */}
+                        <div className="bg-neutral-900 px-4 py-2 flex items-center justify-between border-b border-neutral-800">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <span className="text-[10px] font-mono text-neutral-400 ml-2">
+                              offensive-bash
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(cmd)}
+                            className="text-[11px] font-mono font-bold text-neutral-300 hover:text-white flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 transition-colors"
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span className="text-emerald-400">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Terminal Body */}
+                        <div className="p-4 overflow-x-auto">
+                          <code className="text-emerald-400 font-mono text-xs sm:text-sm whitespace-pre">
+                            $ {cmd}
+                          </code>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Docs Section 4: Pro Tips & Hacker Warnings */}
+            {activeLesson.proTips && activeLesson.proTips.length > 0 && (
+              <section className="rounded-xl border-2 border-amber-500 bg-amber-50 p-5 space-y-2">
+                <div className="flex items-center gap-2 text-amber-900 font-black text-sm uppercase">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Pro Hacker Tip &amp; Bug Bounty Gotcha</span>
+                </div>
+                {activeLesson.proTips.map((tip, idx) => (
+                  <p key={idx} className="text-xs sm:text-sm font-bold text-amber-950 leading-relaxed">
+                    💡 {tip}
+                  </p>
+                ))}
+              </section>
+            )}
+
+            {/* Docs Section 5: Hands-On Lab Exercise for Active Chapter */}
+            <section className="rounded-2xl border-2 border-black bg-neutral-950 text-white p-6 space-y-4 shadow-brutal-sm">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-yellow-400 text-black border border-black">
-                    <Laptop className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="font-mono text-xs font-black uppercase text-yellow-400 tracking-wider block">
-                      Hands-On Lab Scenario
-                    </span>
-                    <h3 className="text-lg sm:text-xl font-black text-white">
-                      {activeChapter.handsOnLab.title}
-                    </h3>
-                  </div>
+                  <Laptop className="w-5 h-5 text-yellow-400" />
+                  <h3 className="font-display font-black text-base sm:text-lg text-white uppercase tracking-tight">
+                    Chapter Lab: {activeChapter.handsOnLab.title}
+                  </h3>
                 </div>
-                <span className="font-mono text-xs font-bold px-2.5 py-1 bg-zinc-800 text-zinc-300 border border-zinc-700">
-                  Target: {activeChapter.handsOnLab.target}
+                <span className="px-2.5 py-0.5 rounded-full border border-yellow-400 bg-yellow-400/20 text-yellow-300 font-mono text-xs font-bold">
+                  Interactive Lab Goal
                 </span>
               </div>
 
-              <div className="bg-zinc-900 border border-zinc-800 p-3.5 space-y-2">
-                <div className="flex items-start gap-2">
-                  <Target className="w-4 h-4 text-rose-400 mt-0.5 shrink-0" />
-                  <p className="text-xs sm:text-sm font-semibold text-zinc-200">
-                    <strong className="text-yellow-400">Mission Goal:</strong>{" "}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                  <span className="text-neutral-400 uppercase font-mono font-bold block mb-1">
+                    Target Environment
+                  </span>
+                  <span className="text-yellow-300 font-mono font-bold">
+                    {activeChapter.handsOnLab.target}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
+                  <span className="text-neutral-400 uppercase font-mono font-bold block mb-1">
+                    Attack Mission
+                  </span>
+                  <span className="text-emerald-400 font-bold">
                     {activeChapter.handsOnLab.goal}
-                  </p>
+                  </span>
                 </div>
               </div>
 
               {/* Lab Steps */}
-              <div className="space-y-2">
-                <span className="font-mono text-xs font-bold uppercase text-zinc-400 block">
-                  Execution Procedure:
-                </span>
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-black uppercase text-neutral-300 tracking-wider">
+                  Attack Execution Steps:
+                </p>
                 <div className="space-y-2">
-                  {activeChapter.handsOnLab.steps.map((step, sidx) => (
+                  {activeChapter.handsOnLab.steps.map((step, idx) => (
                     <div
-                      key={sidx}
-                      className="bg-black/80 border border-zinc-700 p-3 font-mono text-xs flex items-start gap-2.5"
+                      key={idx}
+                      className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-medium text-neutral-200 flex items-start gap-2.5"
                     >
-                      <span className="px-1.5 py-0.5 bg-yellow-400 text-black font-black text-[10px] shrink-0">
-                        STEP {sidx + 1}
+                      <span className="w-5 h-5 rounded-full bg-yellow-400 text-black font-mono font-black flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                        {idx + 1}
                       </span>
-                      <span className="text-zinc-200 font-sans text-xs font-medium">{step}</span>
+                      <span className="leading-relaxed">{step}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Verification & Flag */}
-              <div className="bg-emerald-950/60 border border-emerald-500/50 p-3 flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                <div className="text-xs font-medium">
-                  <strong className="text-emerald-300 font-mono uppercase block text-[11px]">
-                    Proof of Verification:
-                  </strong>
-                  <span className="text-emerald-100">{activeChapter.handsOnLab.verification}</span>
+              {/* Lab Verification */}
+              <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-600/60 text-xs font-mono text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Success Flag:</strong> {activeChapter.handsOnLab.verification}
+                </span>
+              </div>
+            </section>
+
+            {/* Docs Section 6: Chapter Interactive Checklist */}
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-black">
+                  <CheckSquare className="w-5 h-5 text-indigo-600" />
+                  <h3 className="font-display font-black text-lg uppercase tracking-tight">
+                    Chapter Verifiable Checklist
+                  </h3>
                 </div>
+                <span className="text-xs font-mono font-bold text-neutral-500">
+                  Click box to verify progress
+                </span>
               </div>
-            </div>
-          )}
 
-          {/* Section: Verifiable Checklist & Live Progress Sync */}
-          <div className="bg-white border-4 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_#000] space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-black/15 pb-3">
-              <div>
-                <h3 className="text-lg font-black text-black uppercase tracking-wide flex items-center gap-2">
-                  <CheckSquare className="w-5 h-5 text-emerald-600" />
-                  Chapter Checklist & Verification ({chapterChecklistDone}/{chapterChecklistTotal})
-                </h3>
-                <p className="text-xs text-gray-600 font-medium mt-0.5">
-                  Check off items as you study or execute labs. Progress saves in Supabase DB.
-                </p>
-              </div>
-              <span className="font-mono text-xs font-black px-2.5 py-1 bg-yellow-200 text-black border border-black shrink-0">
-                {chapterProgressPercent}% Completed
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {activeChapter.checklist.map((item) => {
-                const isChecked = completedItems.includes(item.id);
-
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      if (!isUnlocked) {
-                        if (onRequestUnlock) onRequestUnlock();
-                        return;
-                      }
-                      if (onToggleItem) onToggleItem(item.id);
-                    }}
-                    className={`p-3 border-2 border-black flex items-start gap-3 cursor-pointer transition-all ${
-                      isChecked
-                        ? "bg-emerald-50 border-emerald-600 text-emerald-950"
-                        : "bg-white hover:bg-yellow-50 text-gray-900"
-                    }`}
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      {isChecked ? (
-                        <div className="w-5 h-5 bg-emerald-600 text-white flex items-center justify-center border border-black">
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        </div>
-                      ) : (
-                        <div className="w-5 h-5 bg-white border-2 border-black hover:border-emerald-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p
-                        className={`text-xs sm:text-sm font-bold leading-snug select-none ${
-                          isChecked ? "line-through text-emerald-800" : "text-black"
+              <div className="space-y-2">
+                {activeChapter.checklist.map((item) => {
+                  const isDone = completedItems.includes(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => onToggleItem && onToggleItem(item.id)}
+                      className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-3 select-none ${
+                        isDone
+                          ? "bg-emerald-50 border-emerald-600"
+                          : "bg-white border-neutral-300 hover:border-black"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          isDone
+                            ? "bg-emerald-500 border-emerald-700 text-white"
+                            : "bg-neutral-100 border-neutral-400 hover:border-black"
+                        }`}
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                      <span
+                        className={`text-xs sm:text-sm font-bold ${
+                          isDone ? "text-emerald-950 line-through opacity-75" : "text-black"
                         }`}
                       >
                         {item.label}
-                      </p>
-                      <span className="font-mono text-[10px] text-gray-500 block mt-0.5">
-                        ID: {item.id}
                       </span>
                     </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* ── DOCS BOTTOM PAGINATION (PREV / NEXT LESSON) ─────────── */}
+            <div className="border-t-2 border-neutral-200 pt-6 flex items-center justify-between gap-4 flex-wrap">
+              {prevLessonItem ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateToLesson(prevLessonItem.chapterIndex, prevLessonItem.lesson.id)
+                  }
+                  className="px-4 py-3 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black font-black text-xs uppercase flex items-center gap-2 transition-all shadow-brutal-xs hover:shadow-brutal-sm cursor-pointer active:scale-95"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <div className="text-left">
+                    <span className="text-[10px] text-neutral-500 block font-mono">Previous Lesson</span>
+                    <span>{prevLessonItem.lesson.lessonNumber} {prevLessonItem.lesson.title}</span>
                   </div>
-                );
-              })}
+                </button>
+              ) : (
+                <div />
+              )}
+
+              {nextLessonItem && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigateToLesson(nextLessonItem.chapterIndex, nextLessonItem.lesson.id)
+                  }
+                  className="px-5 py-3 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase flex items-center gap-2 transition-all shadow-brutal hover:shadow-brutal-sm cursor-pointer active:scale-95 ml-auto"
+                >
+                  <div className="text-right">
+                    <span className="text-[10px] text-neutral-700 block font-mono">Next Lesson</span>
+                    <span>{nextLessonItem.lesson.lessonNumber} {nextLessonItem.lesson.title}</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          </div>
-
-          {/* Bottom Next/Prev Chapter Navigation Buttons */}
-          <div className="flex items-center justify-between pt-2">
-            <button
-              disabled={activeChapterIndex === 0}
-              onClick={() => {
-                setActiveChapterIndex((prev) => Math.max(0, prev - 1));
-                window.scrollTo({ top: 100, behavior: "smooth" });
-              }}
-              className={`px-4 py-2.5 border-3 border-black font-mono text-xs font-black uppercase flex items-center gap-2 ${
-                activeChapterIndex === 0
-                  ? "opacity-40 cursor-not-allowed bg-gray-200"
-                  : "bg-white hover:bg-yellow-300 shadow-[3px_3px_0px_0px_#000]"
-              }`}
-            >
-              ← Prev Chapter
-            </button>
-
-            <span className="font-mono text-xs font-bold text-gray-600">
-              Chapter {activeChapter.chapterNumber} of {chapterRoadmapList.length}
-            </span>
-
-            <button
-              disabled={activeChapterIndex === chapterRoadmapList.length - 1}
-              onClick={() => {
-                setActiveChapterIndex((prev) => Math.min(chapterRoadmapList.length - 1, prev + 1));
-                window.scrollTo({ top: 100, behavior: "smooth" });
-              }}
-              className={`px-4 py-2.5 border-3 border-black font-mono text-xs font-black uppercase flex items-center gap-2 ${
-                activeChapterIndex === chapterRoadmapList.length - 1
-                  ? "opacity-40 cursor-not-allowed bg-gray-200"
-                  : "bg-yellow-400 hover:bg-yellow-300 shadow-[3px_3px_0px_0px_#000]"
-              }`}
-            >
-              Next Chapter →
-            </button>
-          </div>
-        </div>
+          </article>
+        </main>
       </div>
     </div>
   );

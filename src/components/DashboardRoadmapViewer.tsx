@@ -256,41 +256,32 @@ export default function DashboardRoadmapViewer({
           </div>
         </div>
 
-        {/* View Switcher Sub-Tabs inside LMS */}
-        <div className="pt-2 flex items-center gap-2 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setActiveTab("chapters")}
-            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
-              activeTab === "chapters"
-                ? "bg-amber-300 text-black shadow-brutal"
-                : "bg-white text-neutral-700 hover:bg-neutral-50"
-            }`}
-          >
-            <BookOpen className="w-4 h-4 text-black" />
-            <span>🔥 1. Chapter Masterclass (10 Deep Chapters & Labs)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("phases")}
-            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
-              activeTab === "phases"
-                ? "bg-amber-300 text-black shadow-brutal"
-                : "bg-white text-neutral-700 hover:bg-neutral-50"
-            }`}
-          >
-            <Map className="w-4 h-4" />
-            <span>2. Phase Checklists ({completedPhaseCount}/{totalPhaseChecklist.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("deep_curriculum")}
-            className={`px-4 py-2.5 rounded-2xl border-[2.5px] border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
-              activeTab === "deep_curriculum"
-                ? "bg-amber-300 text-black shadow-brutal"
-                : "bg-white text-neutral-700 hover:bg-neutral-50"
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>3. Tools & Bugs Matrix (53+ Tools, 105+ Bugs)</span>
-          </button>
+        {/* View Switcher: Interactive Docs is default */}
+        <div className="pt-2 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("chapters")}
+              className={`px-3.5 py-2 rounded-xl border-2 border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
+                activeTab === "chapters"
+                  ? "bg-yellow-300 text-black shadow-brutal-xs"
+                  : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-black" />
+              <span>📖 Interactive Cyber Security Docs</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("deep_curriculum")}
+              className={`px-3.5 py-2 rounded-xl border-2 border-black text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-brutal-xs shrink-0 ${
+                activeTab === "deep_curriculum"
+                  ? "bg-yellow-300 text-black shadow-brutal-xs"
+                  : "bg-white text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-black" />
+              <span>🛠️ Reference Matrix (53+ Tools & Bugs)</span>
+            </button>
+          </div>
         </div>
       </div>
 
