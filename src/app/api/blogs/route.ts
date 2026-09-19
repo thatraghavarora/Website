@@ -185,3 +185,70 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get("id");
+    let slug = searchParams.get("slug");
+
+    // Also check if provided in body
+    if (!id && !slug) {
+      try {
+        const body = await request.json();
+        if (body?.id) id = body.id;
+        if (body?.slug) slug = body.slug;
+      } catch {
+        // Body was empty or not JSON
+      }
+    }
+
+    if (!id && !slug) {
+      return NextResponse.json(
+        { success: false, error: "Blog ID or slug is required for deletion." },
+        { status: 400 }
+      );
+    }
+
+    // Delete from local cache
+    const index = localDemoBlogs.findIndex(
+      (b) => (id && b.id === id) || (slug && b.slug === slug)
+    );
+    if (index !== -1) {
+      localDemoBlogs.splice(index, 1);
+    }
+
+    if (!isSupabaseServerConfigured()) {
+      return NextResponse.json({
+        success: true,
+        message: "Blog article deleted successfully from demo cache.",
+      });
+    }
+
+    const admin = createAdminSupabaseClient();
+    let query = admin.from("blogs").delete();
+    if (id) {
+      query = query.eq("id", id);
+    } else if (slug) {
+      query = query.eq("slug", slug);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error("Supabase blog deletion error:", error);
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Blog article deleted successfully from database!",
+    });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+  }
+}
+

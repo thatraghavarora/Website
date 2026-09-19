@@ -36,7 +36,9 @@ import {
   Clock,
   Sparkles,
   Menu,
-  X
+  X,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 
@@ -473,6 +475,54 @@ export default function AdminPage() {
     } finally {
       setBlogSubmitting(false);
     }
+  };
+
+  // Blog Deletion Handler
+  const handleDeleteBlog = async (id: string, slug: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setStatusMessage({ text: `Deleting article "${title}"...`, type: "success" });
+      const res = await fetch(`/api/blogs?id=${encodeURIComponent(id)}&slug=${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBlogs((prev) => prev.filter((b) => b.id !== id && b.slug !== slug));
+        setStatusMessage({ text: `Blog article "${title}" deleted successfully!`, type: "success" });
+      } else {
+        setStatusMessage({ text: data.error || "Failed to delete blog article.", type: "error" });
+      }
+    } catch {
+      setStatusMessage({ text: "Error sending delete request.", type: "error" });
+    }
+  };
+
+  // Blog Image File Upload Handler (FileReader to Data URL)
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setBlogErrors(["Please select a valid image file (PNG, JPG, WEBP, GIF)."]);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setBlogErrors(["Image size should be under 5MB."]);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const result = uploadEvent.target?.result;
+      if (typeof result === "string") {
+        setNewBlogData((prev) => ({ ...prev, coverImage: result }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Manual Access Grant (Validated on Server)
@@ -1702,13 +1752,13 @@ export default function AdminPage() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-yellow-200 border-b-2 border-black text-black uppercase font-black tracking-wider text-[11px]">
-                    <th className="p-3.5">Article Title</th>
+                    <th className="p-3.5">Cover &amp; Title</th>
                     <th className="p-3.5">Slug</th>
                     <th className="p-3.5">Category</th>
-                    <th className="p-3.5">Estimated Read</th>
+                    <th className="p-3.5">Read Time</th>
                     <th className="p-3.5">Published Date</th>
                     <th className="p-3.5">Status</th>
-                    <th className="p-3.5 text-right">Action</th>
+                    <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y-2 divide-neutral-200 font-bold text-neutral-800">
@@ -1721,9 +1771,18 @@ export default function AdminPage() {
                   ) : (
                     blogs.map((b) => (
                       <tr key={b.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="p-3.5 font-black text-black max-w-xs">
-                          <div className="truncate">{b.title}</div>
-                          <div className="text-[10px] text-neutral-500 font-medium truncate">{b.excerpt}</div>
+                        <td className="p-3.5 font-black text-black max-w-sm">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={b.cover_image || "/images/hero-avatar.jpg"}
+                              alt={b.title}
+                              className="w-12 h-12 rounded-xl object-cover border-2 border-black shrink-0 shadow-brutal-xs bg-neutral-100"
+                            />
+                            <div className="min-w-0">
+                              <div className="truncate font-black text-xs text-black">{b.title}</div>
+                              <div className="text-[10px] text-neutral-500 font-medium truncate">{b.excerpt}</div>
+                            </div>
+                          </div>
                         </td>
                         <td className="p-3.5 font-mono text-[11px] text-neutral-600">
                           {b.slug}
@@ -1745,14 +1804,25 @@ export default function AdminPage() {
                           </span>
                         </td>
                         <td className="p-3.5 text-right whitespace-nowrap">
-                          <Link
-                            href={`/blog/${b.slug}`}
-                            target="_blank"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-black bg-white hover:bg-black hover:text-white transition-colors text-[11px] font-black uppercase"
-                          >
-                            <Eye className="w-3 h-3" />
-                            <span>View</span>
-                          </Link>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Link
+                              href={`/blog/${b.slug}`}
+                              target="_blank"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-black bg-white hover:bg-black hover:text-white transition-colors text-[11px] font-black uppercase cursor-pointer"
+                              title="View blog on live site"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>View</span>
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteBlog(b.id, b.slug, b.title)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-500 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white transition-colors text-[11px] font-black uppercase cursor-pointer shadow-brutal-xs"
+                              title="Delete this blog article"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -2363,17 +2433,100 @@ export default function AdminPage() {
                 />
               </div>
 
-              <div>
-                <label className="block font-black uppercase text-black mb-1">
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  value={newBlogData.coverImage}
-                  onChange={(e) => setNewBlogData({ ...newBlogData, coverImage: e.target.value })}
-                  placeholder="/images/hero-hacker.jpg"
-                  className="w-full px-3 py-2 rounded-xl border-2 border-black bg-neutral-50 font-mono text-xs font-bold focus:bg-white focus:outline-none"
-                />
+              {/* Cover Image Uploader, Presets & Preview */}
+              <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block font-black uppercase text-black text-xs flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-amber-500" />
+                    <span>Article Cover Image</span>
+                  </label>
+                  <span className="text-[10px] font-mono text-neutral-500">Upload file, enter URL, or select preset</span>
+                </div>
+
+                {/* Upload File or URL Input */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-neutral-600 mb-1">
+                      Option A: Upload From Device
+                    </label>
+                    <label className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl border-2 border-dashed border-black bg-white hover:bg-amber-50 cursor-pointer transition-colors text-xs font-black text-neutral-700 shadow-brutal-xs">
+                      <Upload className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Choose Image File...</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-neutral-600 mb-1">
+                      Option B: Image URL
+                    </label>
+                    <input
+                      type="text"
+                      value={newBlogData.coverImage.startsWith("data:") ? "[Local File Uploaded]" : newBlogData.coverImage}
+                      onChange={(e) => setNewBlogData({ ...newBlogData, coverImage: e.target.value })}
+                      placeholder="https://... or /images/..."
+                      className="w-full px-3 py-2 rounded-xl border-2 border-black bg-white font-mono text-xs font-bold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 1-Click Cybersecurity Presets */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-neutral-600 mb-1.5">
+                    Option C: Quick Cyber Presets
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: "Matrix Hacker", url: "/images/hero-hacker.jpg" },
+                      { label: "Raghav Arora Profile", url: "/images/hero-avatar.jpg" },
+                      { label: "Bug Bounty Terminal", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80" },
+                      { label: "Cyber Defense", url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80" },
+                      { label: "Network Security", url: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80" },
+                    ].map((preset, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setNewBlogData({ ...newBlogData, coverImage: preset.url })}
+                        className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                          newBlogData.coverImage === preset.url
+                            ? "bg-amber-400 text-black border-black shadow-brutal-xs font-black"
+                            : "bg-white text-neutral-700 border-neutral-300 hover:border-black"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Image Live Preview */}
+                {newBlogData.coverImage && (
+                  <div className="flex items-center gap-3 pt-1 border-t border-neutral-200">
+                    <img
+                      src={newBlogData.coverImage}
+                      alt="Cover Preview"
+                      className="w-20 h-14 rounded-xl object-cover border-2 border-black shadow-brutal-xs bg-neutral-200"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-black text-black">Cover Preview Ready</p>
+                      <p className="text-[10px] text-neutral-500 font-mono truncate">
+                        {newBlogData.coverImage.startsWith("data:") ? "Base64 Image Uploaded" : newBlogData.coverImage}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setNewBlogData({ ...newBlogData, coverImage: "/images/hero-avatar.jpg" })}
+                      className="text-[10px] font-black uppercase px-2 py-1 rounded border border-neutral-400 bg-white hover:bg-neutral-100 text-neutral-700 cursor-pointer"
+                    >
+                      Reset Default
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>

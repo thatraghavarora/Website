@@ -34,7 +34,7 @@ export default function BlogPage() {
             }),
             author: {
               name: b.author_name || "Raghav Arora",
-              avatar: b.author_avatar || "/images/hero-avatar.jpg",
+              avatar: b.cover_image || b.author_avatar || "/images/hero-avatar.jpg",
               role: "Security Researcher",
             },
             accentColor: ACCENTS[idx % ACCENTS.length],

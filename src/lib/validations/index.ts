@@ -272,7 +272,15 @@ export function validateBlogInput(body: unknown): BlogInputValidationResult {
     ? record.tags.map((t) => sanitizeString(t, 50)).filter(Boolean)
     : ["Web Pentesting"];
 
-  const coverImage = sanitizeString(record.coverImage, 500) || "/images/hero-avatar.jpg";
+  const rawCover = typeof record.coverImage === "string" ? record.coverImage.trim() : "";
+  let coverImage = "/images/hero-avatar.jpg";
+  if (rawCover) {
+    if (rawCover.startsWith("data:image/")) {
+      coverImage = rawCover.slice(0, 3500000); // Allow data URL up to ~2.5MB
+    } else {
+      coverImage = sanitizeString(rawCover, 2000);
+    }
+  }
 
   if (errors.length > 0) {
     return { valid: false, errors };
