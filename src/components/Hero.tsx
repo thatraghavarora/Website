@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { CrownDoodle, LightningDoodle } from "./Doodles";
+import { LightningDoodle } from "./Doodles";
 import {
   LinkedinIcon,
   InstagramIcon,
@@ -37,22 +37,7 @@ export default function Hero() {
               ===================================================== */}
           <div className="lg:col-span-6 flex flex-col items-start z-10 w-full">
 
-            {/* Hi, I'm RAGHAV ARORA — single-line on mobile */}
-            <div className="relative mb-1">
-              <p
-                className="text-lg sm:text-3xl font-black tracking-tight font-display whitespace-nowrap"
-                style={{ color: "var(--fg)" }}
-              >
-                HI, I&apos;M RAGHAV{" "}
-                <span className="relative inline-block">
-                  <span className="absolute inset-x-[-6px] inset-y-[-2px] bg-[#6D28D9] rounded-xl -rotate-1 shadow-brutal-sm -z-10" />
-                  <span className="text-white px-1.5 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">ARORA</span>
-                </span>
-              </p>
-              <div className="absolute -top-6 right-0 sm:-top-6 sm:left-auto transform -rotate-12 pointer-events-none">
-                <CrownDoodle className="w-8 h-7 sm:w-12 sm:h-9 text-yellow-400 animate-float-slow" />
-              </div>
-            </div>
+
 
             {/* Giant Heading — desktop only */}
             <h1
