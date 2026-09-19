@@ -36,7 +36,13 @@ export default function Hero() {
               On mobile this renders SECOND (bottom) due to flex-col-reverse
               ===================================================== */}
           <div className="lg:col-span-6 flex flex-col items-start z-10 w-full">
-
+            {/* Hi, I'm — intro line */}
+            <p
+              className="text-lg sm:text-2xl font-black tracking-tight font-display mb-1"
+              style={{ color: "var(--fg)" }}
+            >
+              HI, I&apos;M
+            </p>
 
 
             {/* Giant Heading — desktop only */}
