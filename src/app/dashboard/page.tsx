@@ -2547,13 +2547,17 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col md:ml-64 min-w-0">
         {/* Header (Text on Left, Avatar on Right, NO extra icons or hamburgers) */}
         <header className="sticky top-0 z-20 h-16 bg-white border-b-[3px] border-black flex items-center justify-between px-4 sm:px-6">
-          {/* Left: thatraghavarora */}
+          {/* Left: Active Section Indicator (Brand is only in left panel) */}
           <div className="flex items-center gap-2">
-            <span className="bg-yellow-300 text-black px-2 py-0.5 rounded-md font-mono text-xs font-black border border-black shadow-brutal-xs">
-              &lt;/&gt;
-            </span>
-            <span className="font-display font-black text-lg sm:text-xl text-black tracking-tight">
-              thatraghavarora
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-neutral-100 border-2 border-black font-mono text-xs font-black uppercase text-black shadow-brutal-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>
+                {activeTab === "home" && "Dashboard"}
+                {activeTab === "courses" && "My Courses"}
+                {activeTab === "roadmap" && "Roadmaps"}
+                {activeTab === "community" && "Community"}
+                {activeTab === "settings" && "Settings"}
+              </span>
             </span>
           </div>
 
