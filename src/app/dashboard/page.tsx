@@ -36,13 +36,12 @@ import {
   Bookmark,
   Volume2,
   Maximize2,
-  CreditCard,
   ShoppingBag,
   X
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { courses, Course } from "@/data/siteData";
-import { roadmaps } from "@/data/roadmapData";
+import { roadmaps, RoadmapItem } from "@/data/roadmapData";
 
 type Tab = "home" | "courses" | "roadmap" | "community" | "settings";
 
@@ -262,6 +261,108 @@ function CoursePurchaseModal({
           >
             <Check className="w-4 h-4" />
             <span>Confirm & Unlock Course Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── PURCHASE ROADMAP MODAL ──────────────────────
+function RoadmapPurchaseModal({
+  roadmap,
+  onClose,
+  onUnlockSuccess,
+}: {
+  roadmap: RoadmapItem;
+  onClose: () => void;
+  onUnlockSuccess: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.78)" }}
+    >
+      <div className="w-full max-w-md rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-7 shadow-brutal-xl relative max-h-[92vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center hover:bg-neutral-100 font-black text-sm transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <Map className="w-6 h-6 text-purple-600" />
+          <h3 className="text-xl font-black font-display text-black">
+            Unlock Full Roadmap Access
+          </h3>
+        </div>
+        <p className="text-xs font-bold text-neutral-600 mb-5">{roadmap.title}</p>
+
+        {/* Price Card */}
+        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-5 shadow-brutal-xs">
+          <p className="text-[11px] font-black uppercase tracking-wider text-black">
+            Lifetime Roadmap Blueprint
+          </p>
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-3xl font-black text-black font-display">
+              {roadmap.price}
+            </span>
+            <span className="text-xs font-bold text-neutral-700 line-through">
+              {roadmap.originalPrice}
+            </span>
+          </div>
+          <p className="text-[11px] font-bold text-neutral-800 mt-1">
+            Unlocks all 6 master phases, 80+ curated topics, lab goals & resource links
+          </p>
+        </div>
+
+        {/* Payment Options */}
+        <div className="space-y-3.5 mb-5">
+          <div className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50">
+            <p className="font-black text-xs text-black mb-1">Option 1 — UPI (India: ₹99 INR)</p>
+            <p className="text-sm font-black font-mono text-purple-800 mb-1">
+              connect@thatraghavarora.in
+            </p>
+            <p className="text-[10px] font-bold text-neutral-600">
+              Pay ₹99 using GPay, PhonePe, Paytm or any UPI app.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl border-2 border-black bg-blue-50">
+            <p className="font-black text-xs text-black mb-1">
+              Option 2 — PayPal (International: $2 USD)
+            </p>
+            <a
+              href="https://paypal.me/raghavarora"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-blue-700 underline font-mono"
+            >
+              paypal.me/raghavarora ($2 USD)
+            </a>
+          </div>
+        </div>
+
+        <a
+          href="https://instagram.com/thatraghavarora"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full py-2.5 rounded-xl border-2 border-black bg-purple-600 hover:bg-purple-700 text-white text-center font-black text-xs transition-colors shadow-brutal-xs mb-3"
+        >
+          Send Payment Proof on Instagram DM
+        </a>
+
+        <div className="pt-3 border-t-2 border-neutral-200">
+          <p className="text-[10px] text-center font-bold text-neutral-500 mb-2">
+            Paid or activating demo access?
+          </p>
+          <button
+            onClick={onUnlockSuccess}
+            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5"
+          >
+            <Check className="w-4 h-4" />
+            <span>Confirm & Unlock Roadmap Now</span>
           </button>
         </div>
       </div>
@@ -888,50 +989,55 @@ function DashboardCourseViewer({
 // ─── HOME TAB ────────────────────────────────────
 function HomeTab({
   purchasedCourseSlugs,
+  purchasedRoadmapSlugs,
   onSelectTab,
   onSelectCourse,
   onRequestBuyCourse,
+  onRequestBuyRoadmap,
 }: {
   purchasedCourseSlugs: string[];
+  purchasedRoadmapSlugs: string[];
   onSelectTab: (t: Tab) => void;
   onSelectCourse: (c: Course) => void;
   onRequestBuyCourse: (c: Course) => void;
+  onRequestBuyRoadmap: (r: RoadmapItem) => void;
 }) {
-  // ONLY real purchased courses are enrolled!
-  const enrolled = courses.filter((c) => purchasedCourseSlugs.includes(c.slug));
+  // ONLY real purchased courses and roadmaps
+  const enrolledCourses = courses.filter((c) => purchasedCourseSlugs.includes(c.slug));
+  const enrolledRoadmaps = roadmaps.filter((r) => purchasedRoadmapSlugs.includes(r.slug));
 
   const stats = [
     {
       label: "Courses Enrolled",
-      value: enrolled.length.toString(),
+      value: enrolledCourses.length.toString(),
       icon: BookOpen,
       bg: "bg-purple-100",
       text: "text-purple-700",
       border: "border-purple-300",
     },
     {
+      label: "Roadmaps Unlocked",
+      value: enrolledRoadmaps.length.toString(),
+      icon: Map,
+      bg: "bg-amber-100",
+      text: "text-amber-700",
+      border: "border-amber-300",
+    },
+    {
       label: "Hours Watched",
-      value: enrolled.length > 0 ? `${enrolled.length * 4.5}h` : "0h",
+      value: enrolledCourses.length > 0 ? `${enrolledCourses.length * 4.5}h` : "0h",
       icon: Clock,
       bg: "bg-blue-100",
       text: "text-blue-700",
       border: "border-blue-300",
     },
     {
-      label: "Lessons Done",
-      value: enrolled.length > 0 ? `${enrolled.length * 5}` : "0",
-      icon: CheckCircle2,
-      bg: "bg-emerald-100",
-      text: "text-emerald-700",
-      border: "border-emerald-300",
-    },
-    {
       label: "Day Streak",
       value: "1 🔥",
       icon: Flame,
-      bg: "bg-amber-100",
-      text: "text-amber-700",
-      border: "border-amber-300",
+      bg: "bg-emerald-100",
+      text: "text-emerald-700",
+      border: "border-emerald-300",
     },
   ];
 
@@ -953,26 +1059,35 @@ function HomeTab({
               <Zap className="w-3 h-3" /> Student Portal
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-white font-display tracking-tight">
-              {enrolled.length > 0
+              {enrolledCourses.length > 0 || enrolledRoadmaps.length > 0
                 ? "Keep Going, You're Doing Great!"
                 : "Welcome to Your Learning Portal!"}
             </h1>
             <p className="text-sm font-bold text-neutral-400 mt-1">
-              {enrolled.length > 0 ? (
+              {enrolledCourses.length > 0 || enrolledRoadmaps.length > 0 ? (
                 <>
-                  You have <span className="text-yellow-300">{enrolled.length} active course(s)</span>. Pick up where you left off.
+                  You have <span className="text-yellow-300">{enrolledCourses.length} course(s)</span> and{" "}
+                  <span className="text-yellow-300">{enrolledRoadmaps.length} roadmap(s)</span> active.
                 </>
               ) : (
-                "Enroll in your first course to begin your cybersecurity & developer journey."
+                "Enroll in your first course or unlock a roadmap to begin your cyber security journey."
               )}
             </p>
           </div>
-          <button
-            onClick={() => onSelectTab("courses")}
-            className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black font-black text-sm hover:bg-yellow-400 transition-all shadow-brutal-sm whitespace-nowrap"
-          >
-            <BookOpen className="w-4 h-4" /> Explore Courses
-          </button>
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => onSelectTab("courses")}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black font-black text-xs sm:text-sm hover:bg-yellow-400 transition-all shadow-brutal-sm whitespace-nowrap"
+            >
+              <BookOpen className="w-4 h-4" /> Courses
+            </button>
+            <button
+              onClick={() => onSelectTab("roadmap")}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-white bg-white text-black font-black text-xs sm:text-sm hover:bg-neutral-100 transition-all shadow-brutal-sm whitespace-nowrap"
+            >
+              <Map className="w-4 h-4" /> Roadmaps
+            </button>
+          </div>
         </div>
       </div>
 
@@ -992,6 +1107,65 @@ function HomeTab({
         ))}
       </div>
 
+      {/* ─── ROADMAP SECTION ON HOME (SHOWN IF USER PURCHASED ROADMAP) ─── */}
+      {enrolledRoadmaps.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Map className="w-5 h-5 text-purple-700" />
+              <h2 className="text-xl font-black text-black font-display">
+                My Enrolled Roadmaps
+              </h2>
+            </div>
+            <button
+              onClick={() => onSelectTab("roadmap")}
+              className="text-xs font-black text-purple-700 flex items-center gap-1 hover:underline"
+            >
+              View All Roadmaps <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {enrolledRoadmaps.map((r) => (
+              <div
+                key={r.slug}
+                className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal hover:-translate-y-0.5 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="px-2.5 py-0.5 rounded-full border border-black bg-purple-200 text-purple-900 text-[10px] font-black uppercase">
+                      {r.category}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full border border-black bg-emerald-300 text-black text-[10px] font-black uppercase flex items-center gap-1 shadow-brutal-xs">
+                      <Check className="w-3 h-3" /> Unlocked
+                    </span>
+                  </div>
+                  <h3 className="font-display font-black text-base text-black mb-1">
+                    {r.title}
+                  </h3>
+                  <p className="text-xs font-bold text-neutral-500 mb-4 line-clamp-2">
+                    {r.description}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t-2 border-neutral-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-600 flex items-center gap-1">
+                    <Map className="w-3.5 h-3.5 text-black" /> {r.modulesCount} Master Phases
+                  </span>
+                  <Link
+                    href={`/roadmap/${r.slug}`}
+                    className="px-4 py-2 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black shadow-brutal-xs transition-colors flex items-center gap-1"
+                  >
+                    <span>Open Roadmap</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Continue Learning OR Buy Empty State */}
@@ -1006,9 +1180,9 @@ function HomeTab({
             </button>
           </div>
 
-          {enrolled.length > 0 ? (
+          {enrolledCourses.length > 0 ? (
             /* IF USER HAS PURCHASED COURSES */
-            enrolled.map((c) => (
+            enrolledCourses.map((c) => (
               <div
                 key={c.slug}
                 className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row gap-4"
@@ -1068,6 +1242,30 @@ function HomeTab({
 
         {/* Right panel */}
         <div className="lg:col-span-4 space-y-4">
+          {/* ROADMAP TEASER IF NOT ENROLLED IN ROADMAP */}
+          {enrolledRoadmaps.length === 0 && (
+            <div className="rounded-2xl border-[3px] border-black bg-purple-100 p-5 shadow-brutal">
+              <div className="flex items-center gap-2 mb-2">
+                <Map className="w-4 h-4 text-purple-700" />
+                <span className="font-black text-xs uppercase text-purple-900 tracking-wider">
+                  Featured Blueprint
+                </span>
+              </div>
+              <h3 className="font-display font-black text-base text-black mb-1">
+                Web Pentesting Roadmap
+              </h3>
+              <p className="text-xs font-bold text-neutral-600 mb-4 leading-snug">
+                6 structured master phases, 80+ topics, hands-on lab goals & bug bounty guides.
+              </p>
+              <button
+                onClick={() => onRequestBuyRoadmap(roadmaps[0])}
+                className="block w-full py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-center font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs"
+              >
+                Unlock for 99 RS | $2
+              </button>
+            </div>
+          )}
+
           <div className="rounded-2xl border-[3px] border-black bg-neutral-950 p-5 shadow-brutal">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping shrink-0" />
@@ -1088,6 +1286,7 @@ function HomeTab({
               Join Community
             </button>
           </div>
+
           <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal">
             <div className="flex items-center gap-2 mb-3">
               <Award className="w-4 h-4 text-amber-600" />
@@ -1311,46 +1510,112 @@ function CoursesTab({
 }
 
 // ─── ROADMAP TAB ─────────────────────────────────
-function RoadmapTab() {
+function RoadmapTab({
+  purchasedRoadmapSlugs,
+  onRequestBuyRoadmap,
+}: {
+  purchasedRoadmapSlugs: string[];
+  onRequestBuyRoadmap: (r: RoadmapItem) => void;
+}) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-black text-black font-display">Your Roadmaps</h2>
-        <p className="text-sm font-bold text-neutral-500 mt-1">Structured learning paths — phase by phase</p>
+        <h2 className="text-2xl font-black text-black font-display">Roadmaps & Blueprints</h2>
+        <p className="text-sm font-bold text-neutral-500 mt-1">
+          Structured learning paths — complete phase by phase with real-world targets
+        </p>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {roadmaps.map((r) => (
-          <div key={r.slug} className="rounded-2xl border-[3px] border-black bg-white p-6 shadow-brutal hover:-translate-y-1 hover:shadow-brutal-xl transition-all">
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full border-2 border-black bg-purple-200 text-[11px] font-black uppercase">{r.category}</span>
-              {r.badge && <span className="px-2 py-0.5 rounded-full border-2 border-black bg-yellow-300 text-[11px] font-black uppercase">{r.badge}</span>}
-            </div>
-            <h3 className="font-display font-black text-lg text-black mb-2">{r.title}</h3>
-            <p className="text-xs font-bold text-neutral-500 mb-4 line-clamp-2">{r.description}</p>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3 text-xs font-bold text-neutral-600">
-                <span className="flex items-center gap-1"><Map className="w-3.5 h-3.5" />{r.modulesCount} phases</span>
-                <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />{r.rating}</span>
+        {roadmaps.map((r) => {
+          const isPurchased = purchasedRoadmapSlugs.includes(r.slug);
+
+          return (
+            <div
+              key={r.slug}
+              className="rounded-2xl border-[3px] border-black bg-white p-6 shadow-brutal hover:-translate-y-1 hover:shadow-brutal-xl transition-all flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded-full border-2 border-black bg-purple-200 text-purple-900 text-[11px] font-black uppercase">
+                    {r.category}
+                  </span>
+                  {isPurchased ? (
+                    <span className="px-2.5 py-0.5 rounded-full border-2 border-black bg-emerald-300 text-black text-[11px] font-black uppercase flex items-center gap-1 shadow-brutal-xs">
+                      <Check className="w-3.5 h-3.5" /> Unlocked & Active
+                    </span>
+                  ) : (
+                    r.badge && (
+                      <span className="px-2 py-0.5 rounded-full border-2 border-black bg-yellow-300 text-black text-[11px] font-black uppercase">
+                        {r.badge}
+                      </span>
+                    )
+                  )}
+                </div>
+
+                <h3 className="font-display font-black text-xl text-black mb-2 leading-snug">
+                  {r.title}
+                </h3>
+                <p className="text-xs font-bold text-neutral-500 mb-4 line-clamp-2 leading-relaxed">
+                  {r.description}
+                </p>
+
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-3 text-xs font-bold text-neutral-600">
+                    <span className="flex items-center gap-1">
+                      <Map className="w-3.5 h-3.5" />
+                      {r.modulesCount} phases
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      {r.rating}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-base text-black">{r.price}</p>
+                    <p className="text-[10px] text-neutral-400 line-through">{r.originalPrice}</p>
+                  </div>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-black text-base text-black">{r.price}</p>
-                <p className="text-[10px] text-neutral-400 line-through">{r.originalPrice}</p>
-              </div>
+
+              {/* CTA based on purchase */}
+              {isPurchased ? (
+                <div className="flex items-center gap-2 pt-2 border-t-2 border-neutral-100">
+                  <div className="flex-1 flex items-center gap-1.5 p-2 rounded-xl border border-emerald-300 bg-emerald-50">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span className="text-[11px] font-bold text-emerald-800">
+                      All 6 Phases Unlocked
+                    </span>
+                  </div>
+                  <Link
+                    href={`/roadmap/${r.slug}`}
+                    className="px-5 py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black transition-colors shadow-brutal-xs flex items-center gap-1"
+                  >
+                    <span>Open Roadmap</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 pt-2 border-t-2 border-neutral-100">
+                  <button
+                    onClick={() => onRequestBuyRoadmap(r)}
+                    className="flex-1 py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-black" />
+                    <span>Unlock Full Roadmap · {r.price}</span>
+                  </button>
+                  <Link
+                    href={`/roadmap/${r.slug}`}
+                    className="px-3.5 py-2.5 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-black shadow-brutal-xs"
+                    title="Preview Roadmap"
+                  >
+                    Preview
+                  </Link>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-1.5 p-2.5 rounded-xl border border-neutral-200 bg-neutral-50">
-                <Lock className="w-3.5 h-3.5 text-neutral-400" />
-                <span className="text-[11px] font-bold text-neutral-500">Deep content locked</span>
-              </div>
-              <Link
-                href={`/roadmap/${r.slug}`}
-                className="px-4 py-2.5 rounded-xl border-2 border-black bg-yellow-300 text-black text-xs font-black hover:bg-yellow-400 transition-colors shadow-brutal-xs whitespace-nowrap"
-              >
-                View Roadmap →
-              </Link>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1456,38 +1721,69 @@ function SettingsTab() {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+  // User purchased content state
   const [purchasedCourseSlugs, setPurchasedCourseSlugs] = useState<string[]>([]);
+  const [purchasedRoadmapSlugs, setPurchasedRoadmapSlugs] = useState<string[]>([]);
+
+  // Modal states
   const [purchasingCourse, setPurchasingCourse] = useState<Course | null>(null);
+  const [purchasingRoadmap, setPurchasingRoadmap] = useState<RoadmapItem | null>(null);
 
-  // Load user purchased courses on mount
+  // Load user purchased courses & roadmaps on mount
   useEffect(() => {
-    const loadedSlugs: string[] = [];
-
-    // 1. Check local storage
+    // 1. Check LocalStorage for courses
+    const loadedCourses: string[] = [];
     courses.forEach((c) => {
       try {
         const stored = localStorage.getItem(`course_purchased_${c.slug}`);
-        if (stored === "true" && !loadedSlugs.includes(c.slug)) {
-          loadedSlugs.push(c.slug);
+        if (stored === "true" && !loadedCourses.includes(c.slug)) {
+          loadedCourses.push(c.slug);
         }
       } catch {}
     });
+    setPurchasedCourseSlugs([...loadedCourses]);
 
-    setPurchasedCourseSlugs([...loadedSlugs]);
+    // 2. Check LocalStorage for roadmaps
+    const loadedRoadmaps: string[] = [];
+    roadmaps.forEach((r) => {
+      try {
+        const stored = localStorage.getItem(`roadmap_purchased_${r.slug}`);
+        if (stored === "true" && !loadedRoadmaps.includes(r.slug)) {
+          loadedRoadmaps.push(r.slug);
+        }
+      } catch {}
+    });
+    setPurchasedRoadmapSlugs([...loadedRoadmaps]);
 
-    // 2. Query Supabase purchases API
+    // 3. Query Supabase purchases API to sync active purchases
     fetch("/api/purchases")
       .then((res) => res.json())
       .then((data) => {
         if (data.purchases && Array.isArray(data.purchases)) {
-          const apiSlugs = data.purchases
-            .filter((p: any) => p.status === "active")
+          const activePurchases = data.purchases.filter(
+            (p: any) => p.status === "active"
+          );
+
+          // Course slugs from server
+          const apiCourseSlugs = activePurchases
+            .filter((p: any) => p.item_type === "course")
             .map((p: any) => p.item_slug);
-          
-          setPurchasedCourseSlugs((prev) => {
-            const combined = Array.from(new Set([...prev, ...apiSlugs]));
-            return combined;
-          });
+          if (apiCourseSlugs.length > 0) {
+            setPurchasedCourseSlugs((prev) =>
+              Array.from(new Set([...prev, ...apiCourseSlugs]))
+            );
+          }
+
+          // Roadmap slugs from server
+          const apiRoadmapSlugs = activePurchases
+            .filter((p: any) => p.item_type === "roadmap" || !p.item_type)
+            .map((p: any) => p.item_slug);
+          if (apiRoadmapSlugs.length > 0) {
+            setPurchasedRoadmapSlugs((prev) =>
+              Array.from(new Set([...prev, ...apiRoadmapSlugs]))
+            );
+          }
         }
       })
       .catch(() => {});
@@ -1497,7 +1793,8 @@ export default function DashboardPage() {
     setActiveTab(tab);
   };
 
-  const handleOpenBuyModal = (course: Course) => {
+  // Course purchase handler
+  const handleOpenBuyCourseModal = (course: Course) => {
     setPurchasingCourse(course);
   };
 
@@ -1527,6 +1824,43 @@ export default function DashboardPage() {
           itemSlug: purchasingCourse.slug,
           itemTitle: purchasingCourse.title,
           amount: purchasingCourse.price,
+          paymentMethod: "upi",
+        }),
+      });
+    } catch {}
+  };
+
+  // Roadmap purchase handler
+  const handleOpenBuyRoadmapModal = (roadmap: RoadmapItem) => {
+    setPurchasingRoadmap(roadmap);
+  };
+
+  const handleUnlockRoadmapSuccess = async () => {
+    if (!purchasingRoadmap) return;
+    const slug = purchasingRoadmap.slug;
+
+    // 1. Update State
+    setPurchasedRoadmapSlugs((prev) => Array.from(new Set([...prev, slug])));
+
+    // 2. Persist in LocalStorage (same key RoadmapDetailClient uses)
+    try {
+      localStorage.setItem(`roadmap_purchased_${slug}`, "true");
+    } catch {}
+
+    // 3. Close modal & celebrate
+    setPurchasingRoadmap(null);
+    confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+
+    // 4. Save to DB
+    try {
+      await fetch("/api/purchases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemType: "roadmap",
+          itemSlug: purchasingRoadmap.slug,
+          itemTitle: purchasingRoadmap.title,
+          amount: purchasingRoadmap.price,
           paymentMethod: "upi",
         }),
       });
@@ -1569,9 +1903,11 @@ export default function DashboardPage() {
           {activeTab === "home" && (
             <HomeTab
               purchasedCourseSlugs={purchasedCourseSlugs}
+              purchasedRoadmapSlugs={purchasedRoadmapSlugs}
               onSelectTab={handleSelectTab}
               onSelectCourse={(course) => setSelectedCourse(course)}
-              onRequestBuyCourse={handleOpenBuyModal}
+              onRequestBuyCourse={handleOpenBuyCourseModal}
+              onRequestBuyRoadmap={handleOpenBuyRoadmapModal}
             />
           )}
           {activeTab === "courses" && (
@@ -1580,10 +1916,15 @@ export default function DashboardPage() {
               selectedCourse={selectedCourse}
               onSelectCourse={(course) => setSelectedCourse(course)}
               onClearCourse={() => setSelectedCourse(null)}
-              onRequestBuyCourse={handleOpenBuyModal}
+              onRequestBuyCourse={handleOpenBuyCourseModal}
             />
           )}
-          {activeTab === "roadmap" && <RoadmapTab />}
+          {activeTab === "roadmap" && (
+            <RoadmapTab
+              purchasedRoadmapSlugs={purchasedRoadmapSlugs}
+              onRequestBuyRoadmap={handleOpenBuyRoadmapModal}
+            />
+          )}
           {activeTab === "community" && <CommunityTab />}
           {activeTab === "settings" && <SettingsTab />}
         </main>
@@ -1601,6 +1942,15 @@ export default function DashboardPage() {
           course={purchasingCourse}
           onClose={() => setPurchasingCourse(null)}
           onUnlockSuccess={handleUnlockCourseSuccess}
+        />
+      )}
+
+      {/* Roadmap Purchase Modal */}
+      {purchasingRoadmap && (
+        <RoadmapPurchaseModal
+          roadmap={purchasingRoadmap}
+          onClose={() => setPurchasingRoadmap(null)}
+          onUnlockSuccess={handleUnlockRoadmapSuccess}
         />
       )}
     </div>
