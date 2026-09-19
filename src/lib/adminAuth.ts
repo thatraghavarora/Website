@@ -6,7 +6,10 @@ import {
 } from "./supabase/server";
 
 export const ADMIN_COOKIE_NAME = "raghav_admin_session";
-export const DEFAULT_ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || "raghav@admin2026";
+if (!process.env.ADMIN_SECRET_KEY) {
+  console.warn("[adminAuth] WARNING: ADMIN_SECRET_KEY env var is not set. Admin auth will be disabled.");
+}
+export const DEFAULT_ADMIN_SECRET = process.env.ADMIN_SECRET_KEY ?? "";
 
 /**
  * Validates whether the incoming request is authorized as an admin.
