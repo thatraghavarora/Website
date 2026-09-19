@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -35,8 +35,12 @@ import {
   Sparkles,
   Bookmark,
   Volume2,
-  Maximize2
+  Maximize2,
+  CreditCard,
+  ShoppingBag,
+  X
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import { courses, Course } from "@/data/siteData";
 import { roadmaps } from "@/data/roadmapData";
 
@@ -158,25 +162,135 @@ function MobileBottomNav({
   );
 }
 
+// ─── PURCHASE COURSE MODAL ───────────────────────
+function CoursePurchaseModal({
+  course,
+  onClose,
+  onUnlockSuccess,
+}: {
+  course: Course;
+  onClose: () => void;
+  onUnlockSuccess: () => void;
+}) {
+  const priceDisplay =
+    typeof course.price === "number" ? `₹${course.price} INR` : `${course.price}`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.78)" }}
+    >
+      <div className="w-full max-w-md rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-7 shadow-brutal-xl relative max-h-[92vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center hover:bg-neutral-100 font-black text-sm transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-2.5 mb-1.5">
+          <Zap className="w-6 h-6 text-yellow-500 fill-yellow-400" />
+          <h3 className="text-xl font-black font-display text-black">
+            Unlock Full Course Access
+          </h3>
+        </div>
+        <p className="text-xs font-bold text-neutral-600 mb-5">{course.title}</p>
+
+        {/* Price Card */}
+        <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-5 shadow-brutal-xs">
+          <p className="text-[11px] font-black uppercase tracking-wider text-black">
+            Lifetime Enrollment
+          </p>
+          <div className="flex items-baseline gap-2 mt-0.5">
+            <span className="text-3xl font-black text-black font-display">
+              {priceDisplay}
+            </span>
+            {course.originalPrice && (
+              <span className="text-xs font-bold text-neutral-700 line-through">
+                ₹{course.originalPrice}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] font-bold text-neutral-800 mt-1">
+            Includes all modules, code files, Discord access & completion certificate
+          </p>
+        </div>
+
+        {/* Payment Options */}
+        <div className="space-y-3.5 mb-5">
+          <div className="p-3.5 rounded-2xl border-2 border-black bg-neutral-50">
+            <p className="font-black text-xs text-black mb-1">Option 1 — UPI (Instant Pay)</p>
+            <p className="text-sm font-black font-mono text-purple-800 mb-1">
+              connect@thatraghavarora.in
+            </p>
+            <p className="text-[10px] font-bold text-neutral-600">
+              Pay using Google Pay, PhonePe, Paytm or any UPI app.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-2xl border-2 border-black bg-blue-50">
+            <p className="font-black text-xs text-black mb-1">
+              Option 2 — PayPal (International)
+            </p>
+            <a
+              href="https://paypal.me/raghavarora"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-blue-700 underline font-mono"
+            >
+              paypal.me/raghavarora ($10 USD)
+            </a>
+          </div>
+        </div>
+
+        <a
+          href="https://instagram.com/thatraghavarora"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full py-2.5 rounded-xl border-2 border-black bg-purple-600 hover:bg-purple-700 text-white text-center font-black text-xs transition-colors shadow-brutal-xs mb-3"
+        >
+          Send Payment Proof on Instagram DM
+        </a>
+
+        <div className="pt-3 border-t-2 border-neutral-200">
+          <p className="text-[10px] text-center font-bold text-neutral-500 mb-2">
+            Paid or activating demo access?
+          </p>
+          <button
+            onClick={onUnlockSuccess}
+            className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5"
+          >
+            <Check className="w-4 h-4" />
+            <span>Confirm & Unlock Course Now</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── IN-DASHBOARD COURSE VIEWER ──────────────────
 function DashboardCourseViewer({
   course,
+  isPurchased,
   onBack,
+  onRequestBuy,
 }: {
   course: Course;
+  isPurchased: boolean;
   onBack: () => void;
+  onRequestBuy: () => void;
 }) {
   const firstLecture = course.curriculum[0]?.lectures[0] || {
     title: "Course Overview & Introduction",
     duration: "10:00",
+    freePreview: true,
   };
 
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
   const [activeLectureIdx, setActiveLectureIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [completedLectures, setCompletedLectures] = useState<string[]>([
-    firstLecture.title,
-  ]);
+  const [completedLectures, setCompletedLectures] = useState<string[]>([]);
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({
     0: true,
     1: true,
@@ -187,11 +301,17 @@ function DashboardCourseViewer({
   const currentLecture =
     currentSection?.lectures[activeLectureIdx] || firstLecture;
 
+  const isLectureAccessible = isPurchased || Boolean(currentLecture.freePreview);
+
   const toggleSection = (idx: number) => {
     setExpandedSections((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
   const toggleComplete = (title: string) => {
+    if (!isPurchased) {
+      onRequestBuy();
+      return;
+    }
     setCompletedLectures((prev) =>
       prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
     );
@@ -208,11 +328,23 @@ function DashboardCourseViewer({
 
   const handleNextLecture = () => {
     if (currentSection && activeLectureIdx < currentSection.lectures.length - 1) {
-      setActiveLectureIdx(activeLectureIdx + 1);
+      const nextIdx = activeLectureIdx + 1;
+      const nextLec = currentSection.lectures[nextIdx];
+      if (!isPurchased && !nextLec.freePreview) {
+        onRequestBuy();
+        return;
+      }
+      setActiveLectureIdx(nextIdx);
     } else if (activeSectionIdx < course.curriculum.length - 1) {
-      setActiveSectionIdx(activeSectionIdx + 1);
+      const nextSecIdx = activeSectionIdx + 1;
+      const nextLec = course.curriculum[nextSecIdx]?.lectures[0];
+      if (!isPurchased && !nextLec?.freePreview) {
+        onRequestBuy();
+        return;
+      }
+      setActiveSectionIdx(nextSecIdx);
       setActiveLectureIdx(0);
-      setExpandedSections((prev) => ({ ...prev, [activeSectionIdx + 1]: true }));
+      setExpandedSections((prev) => ({ ...prev, [nextSecIdx]: true }));
     }
   };
 
@@ -225,6 +357,9 @@ function DashboardCourseViewer({
       setActiveLectureIdx(course.curriculum[prevSec].lectures.length - 1);
     }
   };
+
+  const priceFormatted =
+    typeof course.price === "number" ? `₹${course.price}` : `${course.price}`;
 
   return (
     <div className="space-y-6">
@@ -239,15 +374,25 @@ function DashboardCourseViewer({
         </button>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="px-2.5 py-0.5 rounded-full border border-black bg-purple-200 text-purple-900 font-black text-[10px] uppercase">
+          {isPurchased ? (
+            <span className="px-3 py-1 rounded-full border-2 border-black bg-emerald-300 text-black font-black text-[11px] uppercase tracking-wider shadow-brutal-xs flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" /> Enrolled Student
+            </span>
+          ) : (
+            <button
+              onClick={onRequestBuy}
+              className="px-3.5 py-1.5 rounded-full border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider shadow-brutal-xs flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 fill-black" />
+              <span>Buy Course · {priceFormatted}</span>
+            </button>
+          )}
+
+          <span className="px-2.5 py-1 rounded-full border border-black bg-purple-200 text-purple-900 font-black text-[10px] uppercase">
             {course.category}
           </span>
-          <span className="px-2.5 py-0.5 rounded-full border border-black bg-yellow-300 text-black font-black text-[10px] uppercase">
+          <span className="px-2.5 py-1 rounded-full border border-black bg-yellow-300 text-black font-black text-[10px] uppercase">
             {course.level}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs font-black text-black bg-white px-2 py-0.5 rounded-full border border-black">
-            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            {course.rating}
           </span>
         </div>
       </div>
@@ -261,19 +406,25 @@ function DashboardCourseViewer({
             {/* Player Top Info */}
             <div className="px-4 sm:px-6 py-3 border-b-2 border-neutral-800 bg-neutral-900 flex items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <span className={`w-2.5 h-2.5 rounded-full ${isLectureAccessible ? "bg-red-500 animate-pulse" : "bg-neutral-500"} shrink-0`} />
                 <span className="font-mono text-neutral-400 truncate">
                   {currentSection?.sectionTitle || "Module"}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-yellow-300/20 text-yellow-300 font-mono text-[11px] font-bold shrink-0">
-                {currentLecture.duration}
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                {!isPurchased && currentLecture.freePreview && (
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 font-mono text-[10px] font-bold">
+                    Free Preview
+                  </span>
+                )}
+                <span className="px-2 py-0.5 rounded bg-yellow-300/20 text-yellow-300 font-mono text-[11px] font-bold">
+                  {currentLecture.duration}
+                </span>
+              </div>
             </div>
 
-            {/* Video Screen Simulation */}
+            {/* Video Screen / Locked Screen */}
             <div className="relative aspect-video w-full bg-neutral-900 flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden">
-              {/* Background grid */}
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
@@ -283,68 +434,90 @@ function DashboardCourseViewer({
                 }}
               />
 
-              {/* Decorative elements */}
-              <div className="absolute top-4 left-4 font-mono text-[11px] text-yellow-400/70 text-left hidden sm:block">
-                <span>[STUDENT_VIEW::HD_1080P]</span>
-                <br />
-                <span className="text-neutral-500">
-                  LESSON {activeLectureIdx + 1} / {currentSection?.lectures.length || 1}
-                </span>
-              </div>
+              {isLectureAccessible ? (
+                <>
+                  <div className="absolute top-4 left-4 font-mono text-[11px] text-yellow-400/70 text-left hidden sm:block">
+                    <span>[STUDENT_VIEW::HD_1080P]</span>
+                    <br />
+                    <span className="text-neutral-500">
+                      LESSON {activeLectureIdx + 1} / {currentSection?.lectures.length || 1}
+                    </span>
+                  </div>
 
-              {/* Play / Pause Center Button */}
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="relative z-10 w-20 h-20 rounded-full border-[3px] border-black bg-yellow-300 hover:bg-yellow-400 text-black flex items-center justify-center shadow-brutal transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <Pause className="w-9 h-9 fill-black text-black" />
-                ) : (
-                  <Play className="w-9 h-9 fill-black text-black ml-1" />
-                )}
-              </button>
-
-              <p className="relative z-10 font-display font-black text-white text-base sm:text-lg mt-4 max-w-lg leading-snug px-2">
-                {currentLecture.title}
-              </p>
-
-              {isPlaying && (
-                <div className="relative z-10 mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-mono font-bold animate-pulse">
-                  <span>● Playing Lecture Stream</span>
-                </div>
-              )}
-
-              {/* Player Bottom Bar Controls */}
-              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between gap-3 text-white text-xs">
-                <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className="hover:text-yellow-300 transition-colors"
+                    className="relative z-10 w-20 h-20 rounded-full border-[3px] border-black bg-yellow-300 hover:bg-yellow-400 text-black flex items-center justify-center shadow-brutal transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                    title={isPlaying ? "Pause" : "Play"}
                   >
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {isPlaying ? (
+                      <Pause className="w-9 h-9 fill-black text-black" />
+                    ) : (
+                      <Play className="w-9 h-9 fill-black text-black ml-1" />
+                    )}
                   </button>
-                  <Volume2 className="w-4 h-4 text-neutral-400 hidden sm:block" />
-                  <span className="font-mono text-[11px] text-neutral-300">
-                    {isPlaying ? "04:12" : "00:00"} / {currentLecture.duration}
-                  </span>
-                </div>
 
-                {/* Progress bar */}
-                <div className="flex-1 mx-2 h-1.5 rounded-full bg-neutral-700 overflow-hidden cursor-pointer">
-                  <div
-                    className="h-full bg-yellow-400 transition-all"
-                    style={{ width: isPlaying ? "35%" : "5%" }}
-                  />
-                </div>
+                  <p className="relative z-10 font-display font-black text-white text-base sm:text-lg mt-4 max-w-lg leading-snug px-2">
+                    {currentLecture.title}
+                  </p>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">
-                    1.0x
-                  </span>
-                  <Maximize2 className="w-4 h-4 text-neutral-400" />
+                  {isPlaying && (
+                    <div className="relative z-10 mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-mono font-bold animate-pulse">
+                      <span>● Playing Lecture Stream</span>
+                    </div>
+                  )}
+
+                  {/* Player Bottom Bar Controls */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between gap-3 text-white text-xs">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setIsPlaying(!isPlaying)}
+                        className="hover:text-yellow-300 transition-colors"
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </button>
+                      <Volume2 className="w-4 h-4 text-neutral-400 hidden sm:block" />
+                      <span className="font-mono text-[11px] text-neutral-300">
+                        {isPlaying ? "04:12" : "00:00"} / {currentLecture.duration}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 mx-2 h-1.5 rounded-full bg-neutral-700 overflow-hidden cursor-pointer">
+                      <div
+                        className="h-full bg-yellow-400 transition-all"
+                        style={{ width: isPlaying ? "35%" : "5%" }}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono bg-neutral-800 px-1.5 py-0.5 rounded text-neutral-300">
+                        1.0x
+                      </span>
+                      <Maximize2 className="w-4 h-4 text-neutral-400" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* LOCKED SCREEN FOR UNPAID USERS */
+                <div className="relative z-10 flex flex-col items-center justify-center max-w-md px-4">
+                  <div className="w-16 h-16 rounded-2xl border-2 border-yellow-300 bg-yellow-300/10 text-yellow-300 flex items-center justify-center mb-4">
+                    <Lock className="w-8 h-8 text-yellow-300" />
+                  </div>
+                  <h4 className="font-display font-black text-xl text-white mb-2">
+                    This Lecture is Locked
+                  </h4>
+                  <p className="text-xs font-bold text-neutral-400 leading-relaxed mb-5">
+                    Buy <span className="text-white font-black">{course.title}</span> to
+                    unlock this lecture, exercises, source code, and full certification.
+                  </p>
+                  <button
+                    onClick={onRequestBuy}
+                    className="px-6 py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 hover:bg-yellow-400 text-black font-black text-sm transition-all shadow-brutal-sm flex items-center gap-2"
+                  >
+                    <Zap className="w-4 h-4 fill-black" />
+                    <span>Buy Course to Unlock ({priceFormatted})</span>
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Lesson Control Footer */}
@@ -359,19 +532,29 @@ function DashboardCourseViewer({
               </div>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  onClick={() => toggleComplete(currentLecture.title)}
-                  className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl border-2 border-black text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-brutal-xs ${
-                    completedLectures.includes(currentLecture.title)
-                      ? "bg-emerald-400 text-black"
-                      : "bg-neutral-100 text-black hover:bg-neutral-200"
-                  }`}
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  {completedLectures.includes(currentLecture.title)
-                    ? "Completed"
-                    : "Mark Complete"}
-                </button>
+                {isPurchased ? (
+                  <button
+                    onClick={() => toggleComplete(currentLecture.title)}
+                    className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl border-2 border-black text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-brutal-xs ${
+                      completedLectures.includes(currentLecture.title)
+                        ? "bg-emerald-400 text-black"
+                        : "bg-neutral-100 text-black hover:bg-neutral-200"
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    {completedLectures.includes(currentLecture.title)
+                      ? "Completed"
+                      : "Mark Complete"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={onRequestBuy}
+                    className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-brutal-xs"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Buy to Track Progress</span>
+                  </button>
+                )}
 
                 <div className="flex items-center gap-1">
                   <button
@@ -445,8 +628,10 @@ function DashboardCourseViewer({
                   <p className="font-display font-black text-sm text-black">{course.level}</p>
                 </div>
                 <div className="p-3 rounded-xl border-2 border-black bg-neutral-50">
-                  <p className="text-[10px] font-black uppercase text-neutral-500">Language</p>
-                  <p className="font-display font-black text-sm text-black">Hinglish / English</p>
+                  <p className="text-[10px] font-black uppercase text-neutral-500">Price</p>
+                  <p className="font-display font-black text-sm text-purple-700">
+                    {priceFormatted}
+                  </p>
                 </div>
               </div>
             </div>
@@ -512,28 +697,53 @@ function DashboardCourseViewer({
           )}
         </div>
 
-        {/* Right Column: Interactive Curriculum & Progress (4 cols) */}
+        {/* Right Column: Progress (if purchased) OR Buy CTA (if not purchased) */}
         <div className="lg:col-span-4 space-y-5">
-          {/* Progress Card */}
-          <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-display font-black text-sm text-black">
-                Course Progress
-              </span>
-              <span className="font-mono font-black text-xs text-black">
-                {progressPercent}%
-              </span>
+          {/* ONLY SHOW PROGRESS IF USER HAS PURCHASED */}
+          {isPurchased ? (
+            <div className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-display font-black text-sm text-black">
+                  Course Progress
+                </span>
+                <span className="font-mono font-black text-xs text-black">
+                  {progressPercent}%
+                </span>
+              </div>
+              <div className="w-full h-3 rounded-full border-2 border-black bg-neutral-100 overflow-hidden mb-2">
+                <div
+                  className="h-full bg-yellow-300 border-r-2 border-black transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-[11px] font-bold text-neutral-500">
+                {completedLectures.length} of {totalLecturesCount} lessons completed
+              </p>
             </div>
-            <div className="w-full h-3 rounded-full border-2 border-black bg-neutral-100 overflow-hidden mb-2">
-              <div
-                className="h-full bg-yellow-300 border-r-2 border-black transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
-              />
+          ) : (
+            /* PROMINENT BUY CARD IF NOT PURCHASED */
+            <div className="rounded-2xl border-[3px] border-black bg-yellow-300 p-5 shadow-brutal space-y-3">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-black" />
+                <span className="font-black text-xs uppercase tracking-wider text-black">
+                  Unlock Full Course
+                </span>
+              </div>
+              <h4 className="font-display font-black text-xl text-black">
+                {priceFormatted}
+              </h4>
+              <p className="text-xs font-bold text-neutral-800 leading-snug">
+                You haven&apos;t purchased this course yet. Buy now to unlock all video lectures, downloads, and live session access.
+              </p>
+              <button
+                onClick={onRequestBuy}
+                className="w-full py-3 rounded-xl border-2 border-black bg-black text-yellow-300 font-black text-xs uppercase tracking-wider hover:bg-neutral-800 transition-colors shadow-brutal-xs flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4 fill-yellow-300" />
+                <span>Buy & Unlock Course</span>
+              </button>
             </div>
-            <p className="text-[11px] font-bold text-neutral-500">
-              {completedLectures.length} of {totalLecturesCount} lessons completed
-            </p>
-          </div>
+          )}
 
           {/* Course Curriculum Accordion */}
           <div className="rounded-2xl border-[3px] border-black bg-white overflow-hidden shadow-brutal">
@@ -577,11 +787,16 @@ function DashboardCourseViewer({
                           const isCurrent =
                             activeSectionIdx === sIdx && activeLectureIdx === lIdx;
                           const isDone = completedLectures.includes(lec.title);
+                          const canPlay = isPurchased || Boolean(lec.freePreview);
 
                           return (
                             <button
                               key={lIdx}
                               onClick={() => {
+                                if (!canPlay) {
+                                  onRequestBuy();
+                                  return;
+                                }
                                 setActiveSectionIdx(sIdx);
                                 setActiveLectureIdx(lIdx);
                                 setIsPlaying(true);
@@ -595,10 +810,14 @@ function DashboardCourseViewer({
                               <div className="mt-0.5 shrink-0">
                                 {isDone ? (
                                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                ) : isCurrent ? (
-                                  <PlayCircle className="w-4 h-4 text-black animate-pulse" />
+                                ) : canPlay ? (
+                                  isCurrent ? (
+                                    <PlayCircle className="w-4 h-4 text-black animate-pulse" />
+                                  ) : (
+                                    <Play className="w-3.5 h-3.5 text-neutral-400" />
+                                  )
                                 ) : (
-                                  <Play className="w-3.5 h-3.5 text-neutral-400" />
+                                  <Lock className="w-3.5 h-3.5 text-neutral-400" />
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -611,9 +830,21 @@ function DashboardCourseViewer({
                                 >
                                   {lec.title}
                                 </p>
-                                <span className="text-[10px] font-mono text-neutral-500">
-                                  {lec.duration}
-                                </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] font-mono text-neutral-500">
+                                    {lec.duration}
+                                  </span>
+                                  {!isPurchased && lec.freePreview && (
+                                    <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300">
+                                      Preview
+                                    </span>
+                                  )}
+                                  {!isPurchased && !lec.freePreview && (
+                                    <span className="text-[9px] font-black uppercase text-neutral-500 bg-neutral-200 px-1.5 py-0.2 rounded">
+                                      Locked
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </button>
                           );
@@ -656,24 +887,52 @@ function DashboardCourseViewer({
 
 // ─── HOME TAB ────────────────────────────────────
 function HomeTab({
+  purchasedCourseSlugs,
   onSelectTab,
   onSelectCourse,
+  onRequestBuyCourse,
 }: {
+  purchasedCourseSlugs: string[];
   onSelectTab: (t: Tab) => void;
   onSelectCourse: (c: Course) => void;
+  onRequestBuyCourse: (c: Course) => void;
 }) {
-  const enrolled = courses.map((c) => ({
-    ...c,
-    progress: Math.floor(Math.random() * 70 + 10),
-    completedLessons: Math.floor(Math.random() * 12 + 1),
-    lastLesson: c.curriculum[0]?.lectures[0]?.title || "Introduction",
-  }));
+  // ONLY real purchased courses are enrolled!
+  const enrolled = courses.filter((c) => purchasedCourseSlugs.includes(c.slug));
 
   const stats = [
-    { label: "Courses Enrolled", value: enrolled.length.toString(), icon: BookOpen, bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-300" },
-    { label: "Hours Watched",    value: "24.5h",  icon: Clock,        bg: "bg-blue-100",   text: "text-blue-700",   border: "border-blue-300" },
-    { label: "Lessons Done",     value: "75",     icon: CheckCircle2, bg: "bg-emerald-100",text: "text-emerald-700",border: "border-emerald-300" },
-    { label: "Day Streak",       value: "5 🔥",   icon: Flame,        bg: "bg-amber-100",  text: "text-amber-700",  border: "border-amber-300" },
+    {
+      label: "Courses Enrolled",
+      value: enrolled.length.toString(),
+      icon: BookOpen,
+      bg: "bg-purple-100",
+      text: "text-purple-700",
+      border: "border-purple-300",
+    },
+    {
+      label: "Hours Watched",
+      value: enrolled.length > 0 ? `${enrolled.length * 4.5}h` : "0h",
+      icon: Clock,
+      bg: "bg-blue-100",
+      text: "text-blue-700",
+      border: "border-blue-300",
+    },
+    {
+      label: "Lessons Done",
+      value: enrolled.length > 0 ? `${enrolled.length * 5}` : "0",
+      icon: CheckCircle2,
+      bg: "bg-emerald-100",
+      text: "text-emerald-700",
+      border: "border-emerald-300",
+    },
+    {
+      label: "Day Streak",
+      value: "1 🔥",
+      icon: Flame,
+      bg: "bg-amber-100",
+      text: "text-amber-700",
+      border: "border-amber-300",
+    },
   ];
 
   return (
@@ -694,17 +953,25 @@ function HomeTab({
               <Zap className="w-3 h-3" /> Student Portal
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-white font-display tracking-tight">
-              Keep Going, You&apos;re Doing Great!
+              {enrolled.length > 0
+                ? "Keep Going, You're Doing Great!"
+                : "Welcome to Your Learning Portal!"}
             </h1>
             <p className="text-sm font-bold text-neutral-400 mt-1">
-              You&apos;re on a <span className="text-yellow-300">5-day streak</span> — don&apos;t break it today.
+              {enrolled.length > 0 ? (
+                <>
+                  You have <span className="text-yellow-300">{enrolled.length} active course(s)</span>. Pick up where you left off.
+                </>
+              ) : (
+                "Enroll in your first course to begin your cybersecurity & developer journey."
+              )}
             </p>
           </div>
           <button
             onClick={() => onSelectTab("courses")}
             className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-yellow-300 bg-yellow-300 text-black font-black text-sm hover:bg-yellow-400 transition-all shadow-brutal-sm whitespace-nowrap"
           >
-            <PlayCircle className="w-4 h-4" /> Resume Learning
+            <BookOpen className="w-4 h-4" /> Explore Courses
           </button>
         </div>
       </div>
@@ -727,7 +994,7 @@ function HomeTab({
 
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Continue Learning */}
+        {/* Continue Learning OR Buy Empty State */}
         <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-black font-display">Continue Learning</h2>
@@ -735,42 +1002,33 @@ function HomeTab({
               onClick={() => onSelectTab("courses")}
               className="text-xs font-black text-purple-700 flex items-center gap-1 hover:underline"
             >
-              Explore All <ArrowRight className="w-3.5 h-3.5" />
+              Browse All Courses <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-          {enrolled.slice(0, 2).map((c) => (
-            <div
-              key={c.slug}
-              className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row gap-4"
-            >
-              <div className="relative w-full sm:w-36 aspect-video rounded-xl overflow-hidden border-2 border-black shrink-0">
-                <Image src={c.thumbnail} alt={c.title} fill className="object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">
-                  {c.category}
-                </span>
-                <h3 className="font-display font-black text-sm sm:text-base text-black mt-0.5 leading-snug">
-                  {c.title}
-                </h3>
-                <p className="text-[11px] font-bold text-neutral-500 mt-1 mb-3 truncate">
-                  Next: {c.lastLesson}
-                </p>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="flex-1 h-2.5 rounded-full border border-black bg-neutral-100 overflow-hidden">
-                    <div
-                      className="h-full bg-yellow-300 border-r border-black transition-all"
-                      style={{ width: `${c.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] font-black text-black shrink-0">
-                    {c.progress}%
-                  </span>
+
+          {enrolled.length > 0 ? (
+            /* IF USER HAS PURCHASED COURSES */
+            enrolled.map((c) => (
+              <div
+                key={c.slug}
+                className="rounded-2xl border-[3px] border-black bg-white p-5 shadow-brutal hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row gap-4"
+              >
+                <div className="relative w-full sm:w-36 aspect-video rounded-xl overflow-hidden border-2 border-black shrink-0">
+                  <Image src={c.thumbnail} alt={c.title} fill className="object-cover" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-neutral-500">
-                    {c.completedLessons}/{c.lessonsCount} lessons
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-700">
+                    {c.category}
                   </span>
+                  <h3 className="font-display font-black text-sm sm:text-base text-black mt-0.5 leading-snug">
+                    {c.title}
+                  </h3>
+                  <div className="flex items-center gap-3 my-2.5">
+                    <div className="flex-1 h-2 rounded-full border border-black bg-neutral-100 overflow-hidden">
+                      <div className="h-full bg-yellow-300 transition-all" style={{ width: "25%" }} />
+                    </div>
+                    <span className="text-[11px] font-black text-black shrink-0">25%</span>
+                  </div>
                   <button
                     onClick={() => {
                       onSelectCourse(c);
@@ -782,8 +1040,30 @@ function HomeTab({
                   </button>
                 </div>
               </div>
+            ))
+          ) : (
+            /* IF USER HAS NOT BOUGHT ANY COURSE YET */
+            <div className="rounded-2xl border-[3px] border-black bg-white p-6 sm:p-8 shadow-brutal text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl border-[2.5px] border-black bg-yellow-300 flex items-center justify-center mx-auto shadow-brutal-xs">
+                <ShoppingBag className="w-7 h-7 text-black" />
+              </div>
+              <div>
+                <h3 className="font-display font-black text-lg sm:text-xl text-black">
+                  No Courses Purchased Yet
+                </h3>
+                <p className="text-xs sm:text-sm font-bold text-neutral-600 max-w-md mx-auto mt-1 leading-relaxed">
+                  Progress tracking unlocks once you enroll in a course. Explore our hand-crafted, industry-oriented cybersecurity and engineering courses below!
+                </p>
+              </div>
+              <button
+                onClick={() => onSelectTab("courses")}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black font-black text-xs uppercase tracking-wider shadow-brutal transition-transform hover:-translate-y-0.5"
+              >
+                <Zap className="w-4 h-4 fill-black" />
+                <span>Explore Courses & Enroll</span>
+              </button>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Right panel */}
@@ -839,22 +1119,29 @@ function HomeTab({
 
 // ─── COURSES TAB (IN-DASHBOARD EXPLORER) ──────────
 function CoursesTab({
+  purchasedCourseSlugs,
   selectedCourse,
   onSelectCourse,
   onClearCourse,
+  onRequestBuyCourse,
 }: {
+  purchasedCourseSlugs: string[];
   selectedCourse: Course | null;
   onSelectCourse: (c: Course) => void;
   onClearCourse: () => void;
+  onRequestBuyCourse: (c: Course) => void;
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
   if (selectedCourse) {
+    const isPurchased = purchasedCourseSlugs.includes(selectedCourse.slug);
     return (
       <DashboardCourseViewer
         course={selectedCourse}
+        isPurchased={isPurchased}
         onBack={onClearCourse}
+        onRequestBuy={() => onRequestBuyCourse(selectedCourse)}
       />
     );
   }
@@ -874,7 +1161,7 @@ function CoursesTab({
       <div>
         <h2 className="text-2xl font-black text-black font-display">Explore Courses</h2>
         <p className="text-sm font-bold text-neutral-500 mt-1">
-          Select any course to view lessons and watch lectures directly inside your dashboard
+          Select any course to view curriculum and watch lectures inside your dashboard
         </p>
       </div>
 
@@ -910,6 +1197,10 @@ function CoursesTab({
       {/* Course Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {filtered.map((c) => {
+          const isPurchased = purchasedCourseSlugs.includes(c.slug);
+          const priceDisplay =
+            typeof c.price === "number" ? `₹${c.price}` : `${c.price}`;
+
           return (
             <div
               key={c.slug}
@@ -928,9 +1219,13 @@ function CoursesTab({
                   <span className="px-2 py-0.5 rounded-full border border-black bg-white text-[10px] font-black uppercase">
                     {c.level}
                   </span>
-                  {c.badge && (
-                    <span className="px-2 py-0.5 rounded-full border border-black bg-yellow-300 text-[10px] font-black uppercase">
-                      {c.badge}
+                  {isPurchased ? (
+                    <span className="px-2 py-0.5 rounded-full border border-black bg-emerald-300 text-black text-[10px] font-black uppercase flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Enrolled
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full border border-black bg-yellow-300 text-black text-[10px] font-black uppercase">
+                      {priceDisplay}
                     </span>
                   )}
                 </div>
@@ -945,7 +1240,7 @@ function CoursesTab({
                   {c.title}
                 </h3>
 
-                <div className="flex items-center gap-3 text-[11px] font-bold text-neutral-500 mb-3">
+                <div className="flex items-center gap-3 text-[11px] font-bold text-neutral-500 mb-4">
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5" />
                     {c.lessonsCount} lessons
@@ -960,17 +1255,46 @@ function CoursesTab({
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectCourse(c);
-                  }}
-                  className="w-full py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black flex items-center justify-center gap-2 transition-colors shadow-brutal-xs"
-                >
-                  <PlayCircle className="w-4 h-4" />
-                  <span>Explore & Watch Lessons</span>
-                </button>
+                {isPurchased ? (
+                  /* IF PURCHASED: Show Continue Button */
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectCourse(c);
+                    }}
+                    className="w-full py-2.5 rounded-xl border-2 border-black bg-black text-yellow-300 text-xs font-black flex items-center justify-center gap-2 hover:bg-neutral-800 transition-colors shadow-brutal-xs"
+                  >
+                    <PlayCircle className="w-4 h-4" />
+                    <span>Continue Learning</span>
+                  </button>
+                ) : (
+                  /* IF NOT PURCHASED: Show Buy Button (NO PROGRESS) */
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRequestBuyCourse(c);
+                      }}
+                      className="flex-1 py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-brutal-xs"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-black" />
+                      <span>Buy · {priceDisplay}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectCourse(c);
+                      }}
+                      className="px-3 py-2.5 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-black shadow-brutal-xs"
+                      title="Preview Course"
+                    >
+                      Preview
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1132,10 +1456,81 @@ function SettingsTab() {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [purchasedCourseSlugs, setPurchasedCourseSlugs] = useState<string[]>([]);
+  const [purchasingCourse, setPurchasingCourse] = useState<Course | null>(null);
+
+  // Load user purchased courses on mount
+  useEffect(() => {
+    const loadedSlugs: string[] = [];
+
+    // 1. Check local storage
+    courses.forEach((c) => {
+      try {
+        const stored = localStorage.getItem(`course_purchased_${c.slug}`);
+        if (stored === "true" && !loadedSlugs.includes(c.slug)) {
+          loadedSlugs.push(c.slug);
+        }
+      } catch {}
+    });
+
+    setPurchasedCourseSlugs([...loadedSlugs]);
+
+    // 2. Query Supabase purchases API
+    fetch("/api/purchases")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.purchases && Array.isArray(data.purchases)) {
+          const apiSlugs = data.purchases
+            .filter((p: any) => p.status === "active")
+            .map((p: any) => p.item_slug);
+          
+          setPurchasedCourseSlugs((prev) => {
+            const combined = Array.from(new Set([...prev, ...apiSlugs]));
+            return combined;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSelectTab = (tab: Tab) => {
     setActiveTab(tab);
-    // If switching tabs away from courses, keep course state or allow coming back
+  };
+
+  const handleOpenBuyModal = (course: Course) => {
+    setPurchasingCourse(course);
+  };
+
+  const handleUnlockCourseSuccess = async () => {
+    if (!purchasingCourse) return;
+    const slug = purchasingCourse.slug;
+
+    // 1. Update State
+    setPurchasedCourseSlugs((prev) => Array.from(new Set([...prev, slug])));
+
+    // 2. Persist in LocalStorage
+    try {
+      localStorage.setItem(`course_purchased_${slug}`, "true");
+    } catch {}
+
+    // 3. Close modal & celebrate
+    setPurchasingCourse(null);
+    confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+
+    // 4. Save to DB
+    try {
+      await fetch("/api/purchases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemType: "course",
+          itemSlug: purchasingCourse.slug,
+          itemTitle: purchasingCourse.title,
+          amount: purchasingCourse.price,
+          paymentMethod: "upi",
+        }),
+      });
+    } catch {}
   };
 
   return (
@@ -1169,19 +1564,23 @@ export default function DashboardPage() {
           </button>
         </header>
 
-        {/* Main Content Area: pb-24 on mobile so bottom navbar never overlaps */}
+        {/* Main Content Area: pb-28 on mobile so bottom navbar never overlaps */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-28 md:pb-8">
           {activeTab === "home" && (
             <HomeTab
+              purchasedCourseSlugs={purchasedCourseSlugs}
               onSelectTab={handleSelectTab}
               onSelectCourse={(course) => setSelectedCourse(course)}
+              onRequestBuyCourse={handleOpenBuyModal}
             />
           )}
           {activeTab === "courses" && (
             <CoursesTab
+              purchasedCourseSlugs={purchasedCourseSlugs}
               selectedCourse={selectedCourse}
               onSelectCourse={(course) => setSelectedCourse(course)}
               onClearCourse={() => setSelectedCourse(null)}
+              onRequestBuyCourse={handleOpenBuyModal}
             />
           )}
           {activeTab === "roadmap" && <RoadmapTab />}
@@ -1195,6 +1594,15 @@ export default function DashboardPage() {
         active={activeTab}
         onSelect={handleSelectTab}
       />
+
+      {/* Course Purchase Modal */}
+      {purchasingCourse && (
+        <CoursePurchaseModal
+          course={purchasingCourse}
+          onClose={() => setPurchasingCourse(null)}
+          onUnlockSuccess={handleUnlockCourseSuccess}
+        />
+      )}
     </div>
   );
 }
