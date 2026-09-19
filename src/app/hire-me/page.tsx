@@ -269,22 +269,30 @@ export default function HireMePage() {
               </div>
 
               {/* Pricing Notice Callout Card */}
-              <div className="rounded-2xl border-[3px] border-black bg-amber-100/90 p-5 shadow-brutal-sm">
+              <div className="rounded-2xl border-[3px] border-black bg-neutral-950 p-5 shadow-brutal-sm">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-black text-amber-300 flex items-center justify-center shrink-0 shadow-brutal-xs">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-300 border-2 border-black text-black flex items-center justify-center shrink-0 shadow-brutal-xs">
                     <DollarSign className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-display font-black text-sm text-black uppercase tracking-wider">
+                    <h4 className="font-display font-black text-sm text-yellow-300 uppercase tracking-wider mb-2">
                       Transparent Pricing Philosophy:
                     </h4>
-                    <p className="text-xs sm:text-sm font-bold text-neutral-800 mt-1 leading-snug">
-                      • <strong>1:1 Live Guidance Calls:</strong> Fixed transparent fees (<span className="text-purple-900 font-extrabold">$10 / ₹1,000 INR</span> for Cyber Security, <span className="text-blue-900 font-extrabold">$5 / ₹500 INR</span> for Web Dev &amp; Marketing).<br />
-                      • <strong>Freelance &amp; Contract Work:</strong> Depend upon work fees will charge — tailored to your exact project scope and technical complexity.
+                    <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
+                      • <strong className="text-yellow-300">1:1 Live Guidance Calls:</strong> Fixed transparent fees —{" "}
+                      <span className="bg-purple-500 text-white px-1.5 py-0.5 rounded font-extrabold">$10 / ₹1,000 INR</span>{" "}
+                      for Cyber Security,{" "}
+                      <span className="bg-blue-500 text-white px-1.5 py-0.5 rounded font-extrabold">$5 / ₹500 INR</span>{" "}
+                      for Web Dev &amp; Marketing.
+                    </p>
+                    <p className="text-xs sm:text-sm font-bold text-white leading-relaxed mt-2">
+                      • <strong className="text-yellow-300">Freelance &amp; Contract Work:</strong>{" "}
+                      <span className="text-neutral-300">Depend upon work fees will charge — tailored to your exact project scope and technical complexity.</span>
                     </p>
                   </div>
                 </div>
               </div>
+
 
               {/* Overview Pills (Quick Selection Grid) */}
               <div className="space-y-3">
