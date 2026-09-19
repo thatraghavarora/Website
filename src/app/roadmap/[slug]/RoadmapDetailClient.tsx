@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { RoadmapItem } from "@/data/roadmapData";
+import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
 
 const PHASE_BADGE_COLORS: Record<string, string> = {
   "Beginner": "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -47,14 +48,24 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
   useEffect(() => {
     setMounted(true);
+    let unlocked = false;
     try {
       const stored = localStorage.getItem(`roadmap_purchased_${roadmap.slug}`);
-      if (stored === "true") setIsPurchased(true);
+      if (stored === "true") {
+        setIsPurchased(true);
+        unlocked = true;
+        setExpandedPhase(0);
+      }
     } catch {}
 
     fetch(`/api/purchases?slug=${roadmap.slug}`)
       .then((res) => res.json())
-      .then((data) => { if (data.isUnlocked) setIsPurchased(true); })
+      .then((data) => {
+        if (data.isUnlocked) {
+          setIsPurchased(true);
+          if (!unlocked) setExpandedPhase(0);
+        }
+      })
       .catch(() => {});
   }, [roadmap.slug]);
 
@@ -65,9 +76,17 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
 
   const handleUnlockSuccess = async () => {
     setIsPurchased(true);
-    try { localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true"); } catch {}
+    setExpandedPhase(0);
+    try {
+      localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
+    } catch {}
     setIsPurchaseModalOpen(false);
     confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+
+    setTimeout(() => {
+      document.getElementById("roadmap-curriculum-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+
     try {
       await fetch("/api/purchases", {
         method: "POST",
@@ -166,7 +185,29 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
             </div>
 
             {/* ══ 2. ROADMAP PHASES (Teaser — deep content locked) ══ */}
-            <div className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal">
+            <div id="roadmap-curriculum-section" className="rounded-3xl border-[3.5px] border-black bg-white p-8 sm:p-10 shadow-brutal scroll-mt-24">
+              {mounted && isPurchased && (
+                <div className="mb-6 p-4 rounded-2xl border-[2.5px] border-black bg-emerald-300 text-black shadow-brutal-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-6 h-6 text-black shrink-0" />
+                    <div>
+                      <p className="font-black text-sm uppercase tracking-wide">Roadmap Unlocked &amp; Ready</p>
+                      <p className="text-xs font-bold text-neutral-900">
+                        Lifetime Access Active! All 6 phases, 53+ tools, 105+ bugs &amp; verifiable certificate are open below.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setExpandedPhase(expandedPhase === null ? 0 : null)}
+                      className="px-3 py-1.5 rounded-xl border-2 border-black bg-white text-black font-black text-xs uppercase hover:bg-neutral-100 shadow-brutal-xs"
+                    >
+                      {expandedPhase !== null ? "Collapse Phases" : "Expand Phase 1"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-2.5 mb-2">
                 <Flag className="w-6 h-6 text-purple-600 stroke-[2.5]" />
                 <h2 className="text-2xl sm:text-3xl font-black text-black font-display">Your 6-Phase Roadmap</h2>
@@ -304,6 +345,27 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                   <button onClick={handleEnroll} className="btn-brutal btn-brutal-yellow shrink-0 px-5 py-2.5 text-sm font-black whitespace-nowrap">
                     Get Full Access — {roadmap.price}
                   </button>
+                </div>
+              )}
+
+              {/* EMBEDDED DEEP CURRICULUM (WHEN UNLOCKED) */}
+              {mounted && isPurchased && roadmap.slug === "web-pentesting-cyber-security" && (
+                <div className="mt-10 pt-8 border-t-[3px] border-black space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-300 border-2 border-black flex items-center justify-center shadow-brutal-xs">
+                      <Layers className="w-5 h-5 text-black stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-black text-black font-display uppercase">
+                        Paid Masterclass Deep Curriculum &amp; Tools Matrix
+                      </h2>
+                      <p className="text-xs font-bold text-neutral-600">
+                        Full access unlocked: in-depth networking notes, Kali commands, OSINT framework, 53+ tools, 105+ bugs, CTF platforms, and certificate studio.
+                      </p>
+                    </div>
+                  </div>
+
+                  <AdminRoadmapCurriculum />
                 </div>
               )}
             </div>

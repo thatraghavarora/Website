@@ -6,16 +6,48 @@ import {
 } from "@/lib/supabase/server";
 import { validatePurchaseInput } from "@/lib/validations";
 
+interface LocalDemoPurchase {
+  id: string;
+  user_email: string;
+  item_slug: string;
+  item_title: string;
+  item_type: string;
+  amount: string;
+  payment_method: string;
+  transaction_id: string;
+  status: "active" | "pending" | "expired" | "refunded";
+  created_at: string;
+}
+
+const localDemoPurchases: LocalDemoPurchase[] = [
+  {
+    id: "demo-purchase-web-pentest",
+    user_email: "guest@thatraghavarora.in",
+    item_slug: "web-pentesting-cyber-security",
+    item_title: "Web Penetration Testing & Bug Bounty Roadmap",
+    item_type: "roadmap",
+    amount: "99 RS",
+    payment_method: "upi",
+    transaction_id: "TXN-DEMO-INIT",
+    status: "active",
+    created_at: new Date().toISOString(),
+  },
+];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug");
   const email = searchParams.get("email");
 
   if (!isSupabaseServerConfigured()) {
+    const matching = localDemoPurchases.filter(
+      (p) => (!slug || p.item_slug === slug) && p.status === "active"
+    );
     return NextResponse.json({
       configured: false,
-      purchases: [],
-      isUnlocked: false,
+      demoMode: true,
+      purchases: matching,
+      isUnlocked: matching.length > 0,
     });
   }
 
@@ -98,19 +130,25 @@ export async function POST(request: Request) {
     } = validation.data;
 
     if (!isSupabaseServerConfigured()) {
+      const demoPurchase: LocalDemoPurchase = {
+        id: `demo-purchase-${Date.now()}`,
+        user_email: userEmail || "guest@thatraghavarora.in",
+        item_slug: itemSlug,
+        item_title: itemTitle,
+        item_type: itemType,
+        amount,
+        payment_method: paymentMethod,
+        transaction_id: transactionId,
+        status: "active",
+        created_at: new Date().toISOString(),
+      };
+      localDemoPurchases.unshift(demoPurchase);
+
       return NextResponse.json({
         success: true,
         demoMode: true,
         message: "Purchase unlocked locally (Configure Supabase keys in .env.local to persist in database)",
-        purchase: {
-          item_type: itemType,
-          item_slug: itemSlug,
-          item_title: itemTitle,
-          amount,
-          payment_method: paymentMethod,
-          transaction_id: transactionId,
-          status: "active",
-        },
+        purchase: demoPurchase,
       });
     }
 
