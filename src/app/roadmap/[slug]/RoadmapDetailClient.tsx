@@ -27,6 +27,7 @@ import {
 import confetti from "canvas-confetti";
 import { RoadmapItem } from "@/data/roadmapData";
 import AdminRoadmapCurriculum from "@/components/AdminRoadmapCurriculum";
+import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
 
 const PHASE_BADGE_COLORS: Record<string, string> = {
   "Beginner": "bg-emerald-100 text-emerald-800 border-emerald-300",
@@ -40,6 +41,7 @@ const PHASE_BADGE_COLORS: Record<string, string> = {
 };
 
 export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem }) {
+  const [isCashfreeModalOpen, setIsCashfreeModalOpen] = useState(false);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [utrInput, setUtrInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
@@ -71,8 +73,23 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
   }, [roadmap.slug]);
 
   const handleEnroll = () => {
-    setIsPurchaseModalOpen(true);
+    setIsCashfreeModalOpen(true);
     confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+  };
+
+  const handleCashfreeSuccess = (details: { orderId: string; email: string }) => {
+    setIsPurchased(true);
+    setExpandedPhase(0);
+    try {
+      localStorage.setItem(`roadmap_purchased_${roadmap.slug}`, "true");
+    } catch {}
+    setIsCashfreeModalOpen(false);
+    setIsPurchaseModalOpen(false);
+    confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+
+    setTimeout(() => {
+      document.getElementById("roadmap-curriculum-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
   };
 
   const handleUnlockSuccess = async () => {
@@ -550,16 +567,40 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
             </div>
             <p className="text-xs font-bold text-neutral-600 mb-6">{roadmap.title}</p>
 
-            {/* Payment options */}
+            {/* Cashfree Payment Gateway (Instant Recommended) */}
+            <div className="p-4 rounded-2xl border-2 border-black bg-gradient-to-r from-amber-200 to-yellow-300 shadow-brutal-xs mb-5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="px-2 py-0.5 rounded-full bg-black text-white text-[9px] font-black uppercase tracking-wider">
+                  Recommended • Instant Auto-Unlock
+                </span>
+                <span className="text-[10px] font-mono font-bold text-neutral-800">Cashfree PG</span>
+              </div>
+              <p className="text-xs font-black text-black mb-2.5">
+                Pay securely with UPI (GPay, PhonePe, Paytm), Debit/Credit Cards &amp; Netbanking.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPurchaseModalOpen(false);
+                  setIsCashfreeModalOpen(true);
+                }}
+                className="w-full py-3 rounded-xl border-2 border-black bg-black text-white hover:bg-neutral-800 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-brutal-xs cursor-pointer"
+              >
+                <Zap className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                <span>Pay {roadmap.price} with Cashfree Gateway</span>
+              </button>
+            </div>
+
+            {/* Alternative payment options */}
             <div className="space-y-4 mb-6">
               <div className="p-4 rounded-2xl border-2 border-black bg-neutral-50">
-                <p className="font-black text-sm text-black mb-1">Option 1 — UPI (India)</p>
+                <p className="font-black text-sm text-black mb-1">Option 2 — Manual Direct UPI (India)</p>
                 <p className="text-2xl font-black text-black font-display mb-2">₹99 INR</p>
                 <p className="text-xs font-bold text-neutral-600 mb-3">Pay to UPI ID: <span className="text-black font-black">connect@thatraghavarora.in</span></p>
-                <p className="text-[11px] font-bold text-neutral-500">After payment, screenshot karo aur Instagram DM karo: <span className="text-purple-700">@thatraghavarora</span></p>
+                <p className="text-[11px] font-bold text-neutral-500">After payment, enter 12-digit UTR below to confirm.</p>
               </div>
               <div className="p-4 rounded-2xl border-2 border-black bg-blue-50">
-                <p className="font-black text-sm text-black mb-1">Option 2 — PayPal (International)</p>
+                <p className="font-black text-sm text-black mb-1">Option 3 — PayPal (International)</p>
                 <p className="text-2xl font-black text-black font-display mb-2">$2 USD</p>
                 <a href="https://paypal.me/raghavarora" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-700 underline">paypal.me/raghavarora</a>
                 <p className="text-[11px] font-bold text-neutral-500 mt-2">After payment, DM on Instagram with screenshot: <span className="text-purple-700">@thatraghavarora</span></p>
@@ -571,7 +612,7 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span className="text-xs font-black uppercase tracking-wider text-black">
-                  Enter Payment & Verification Details
+                  Enter Payment &amp; Verification Details
                 </span>
               </div>
 
@@ -623,12 +664,23 @@ export default function RoadmapDetailClient({ roadmap }: { roadmap: RoadmapItem 
                 className="w-full py-3 rounded-xl border-2 border-black bg-emerald-400 hover:bg-emerald-500 text-black font-black text-xs uppercase tracking-wider transition-colors shadow-brutal-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                <span>Confirm Payment & Unlock Now</span>
+                <span>Confirm Payment &amp; Unlock Now</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ─── CASHFREE PAYMENT GATEWAY MODAL ─── */}
+      <CashfreeCheckoutModal
+        isOpen={isCashfreeModalOpen}
+        onClose={() => setIsCashfreeModalOpen(false)}
+        itemSlug={roadmap.slug}
+        itemTitle={roadmap.title}
+        amount={roadmap.price}
+        defaultEmail={emailInput}
+        onSuccess={handleCashfreeSuccess}
+      />
     </div>
   );
 }

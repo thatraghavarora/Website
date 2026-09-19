@@ -18,11 +18,13 @@ import {
 import confetti from "canvas-confetti";
 import { roadmaps, RoadmapItem } from "@/data/roadmapData";
 import DashboardRoadmapViewer from "@/components/DashboardRoadmapViewer";
+import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
 
 export default function DashboardRoadmapStandalonePage() {
   const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapItem | null>(null);
   const [purchasedRoadmapSlugs, setPurchasedRoadmapSlugs] = useState<string[]>([]);
   const [purchasingRoadmap, setPurchasingRoadmap] = useState<RoadmapItem | null>(null);
+  const [cashfreeRoadmap, setCashfreeRoadmap] = useState<RoadmapItem | null>(null);
 
   useEffect(() => {
     // Check localStorage
@@ -185,10 +187,12 @@ export default function DashboardRoadmapStandalonePage() {
 
                       {!isPurchased && (
                         <button
-                          onClick={() => setPurchasingRoadmap(r)}
-                          className="btn-brutal btn-brutal-yellow py-2.5 px-3 text-xs font-black uppercase whitespace-nowrap"
+                          onClick={() => setCashfreeRoadmap(r)}
+                          className="btn-brutal btn-brutal-yellow py-2.5 px-3 text-xs font-black uppercase whitespace-nowrap flex items-center gap-1 cursor-pointer"
+                          title="Pay securely with Cashfree"
                         >
-                          Buy ({r.price})
+                          <Zap className="w-3.5 h-3.5 fill-current text-black" />
+                          <span>Buy ({r.price})</span>
                         </button>
                       )}
                     </div>
@@ -208,7 +212,7 @@ export default function DashboardRoadmapStandalonePage() {
             <div className="w-full max-w-md rounded-3xl border-[3.5px] border-black bg-white p-6 sm:p-7 shadow-brutal-xl relative max-h-[92vh] overflow-y-auto">
               <button
                 onClick={() => setPurchasingRoadmap(null)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center hover:bg-neutral-100 font-black text-sm"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center hover:bg-neutral-100 font-black text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -221,34 +225,71 @@ export default function DashboardRoadmapStandalonePage() {
               </div>
               <p className="text-xs font-bold text-neutral-600 mb-4">{purchasingRoadmap.title}</p>
 
-              <div className="p-4 rounded-2xl border-2 border-black bg-yellow-300 mb-4 shadow-brutal-xs">
-                <p className="text-[11px] font-black uppercase tracking-wider text-black">
-                  Instant Lifetime Access
-                </p>
-                <div className="text-2xl font-black text-black font-display mt-0.5">
+              {/* Cashfree Quick Checkout */}
+              <div className="p-4 rounded-2xl border-2 border-black bg-gradient-to-r from-amber-200 to-yellow-300 mb-4 shadow-brutal-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded-full bg-black text-white text-[9px] font-black uppercase">
+                    Auto-Unlock Recommended
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-neutral-800">Cashfree PG</span>
+                </div>
+                <div className="text-2xl font-black text-black font-display leading-none">
                   {purchasingRoadmap.price}
                 </div>
-                <p className="text-[10px] font-bold text-neutral-800 mt-1">
-                  Unlocks all 6 master phases, 53+ offensive tools, 105+ bugs &amp; certificate studio.
+                <p className="text-[10px] font-bold text-neutral-800">
+                  Instant activation via UPI, PhonePe, GPay, Cards &amp; Netbanking.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = purchasingRoadmap;
+                    setPurchasingRoadmap(null);
+                    setCashfreeRoadmap(r);
+                  }}
+                  className="w-full py-2.5 rounded-xl border-2 border-black bg-black text-white hover:bg-neutral-800 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-brutal-xs cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                  <span>Pay with Cashfree Gateway</span>
+                </button>
               </div>
 
               <div className="space-y-3 mb-4 text-xs font-bold">
                 <div className="p-3 rounded-xl border-2 border-black bg-neutral-50">
-                  <p className="font-black text-black">UPI Payment (India)</p>
+                  <p className="font-black text-black">Option 2: Direct UPI (India)</p>
                   <p className="font-mono text-purple-700 font-black">connect@thatraghavarora.in</p>
                 </div>
               </div>
 
               <button
                 onClick={handleUnlockSuccess}
-                className="btn-brutal btn-brutal-primary w-full py-3 text-xs uppercase font-black tracking-wider flex items-center justify-center gap-1.5"
+                className="btn-brutal btn-brutal-primary w-full py-3 text-xs uppercase font-black tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Confirm &amp; Unlock In LMS Portal</span>
               </button>
             </div>
           </div>
+        )}
+
+        {/* Cashfree Checkout Modal */}
+        {cashfreeRoadmap && (
+          <CashfreeCheckoutModal
+            isOpen={Boolean(cashfreeRoadmap)}
+            onClose={() => setCashfreeRoadmap(null)}
+            itemSlug={cashfreeRoadmap.slug}
+            itemTitle={cashfreeRoadmap.title}
+            amount={cashfreeRoadmap.price}
+            onSuccess={() => {
+              const slug = cashfreeRoadmap.slug;
+              setPurchasedRoadmapSlugs((prev) => Array.from(new Set([...prev, slug])));
+              try {
+                localStorage.setItem(`roadmap_purchased_${slug}`, "true");
+              } catch {}
+              setCashfreeRoadmap(null);
+              setPurchasingRoadmap(null);
+              confetti({ particleCount: 160, spread: 80, origin: { y: 0.6 } });
+            }}
+          />
         )}
       </div>
     </div>

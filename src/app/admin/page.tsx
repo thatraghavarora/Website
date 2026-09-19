@@ -1566,9 +1566,17 @@ export default function AdminPage() {
                                 {purchase.utr_number || purchase.transaction_id}
                               </span>
                             </div>
-                            <span className="text-[9px] text-neutral-400 font-mono">
-                              via {purchase.payment_method.toUpperCase()}
-                            </span>
+                            <div className="mt-1">
+                              {purchase.payment_method === "cashfree" ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded font-mono font-black uppercase bg-teal-100 text-teal-950 border border-teal-400">
+                                  ⚡ Cashfree PG
+                                </span>
+                              ) : (
+                                <span className="text-[9px] text-neutral-400 font-mono">
+                                  via {purchase.payment_method.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3.5">
                             {isVerified ? (
