@@ -47,6 +47,7 @@ import {
 import confetti from "canvas-confetti";
 import { courses, Course } from "@/data/siteData";
 import { roadmaps, RoadmapItem } from "@/data/roadmapData";
+import DashboardRoadmapViewer from "@/components/DashboardRoadmapViewer";
 
 type Tab = "home" | "courses" | "roadmap" | "community" | "settings";
 
@@ -1085,6 +1086,7 @@ function HomeTab({
   purchasedRoadmapSlugs,
   onSelectTab,
   onSelectCourse,
+  onSelectRoadmap,
   onRequestBuyCourse,
   onRequestBuyRoadmap,
 }: {
@@ -1092,6 +1094,7 @@ function HomeTab({
   purchasedRoadmapSlugs: string[];
   onSelectTab: (t: Tab) => void;
   onSelectCourse: (c: Course) => void;
+  onSelectRoadmap: (r: RoadmapItem) => void;
   onRequestBuyCourse: (c: Course) => void;
   onRequestBuyRoadmap: (r: RoadmapItem) => void;
 }) {
@@ -1245,13 +1248,13 @@ function HomeTab({
                   <span className="text-xs font-bold text-neutral-600 flex items-center gap-1">
                     <Map className="w-3.5 h-3.5 text-black" /> {r.modulesCount} Master Phases
                   </span>
-                  <Link
-                    href={`/roadmap/${r.slug}`}
+                  <button
+                    onClick={() => onSelectRoadmap(r)}
                     className="px-4 py-2 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black shadow-brutal-xs transition-colors flex items-center gap-1"
                   >
-                    <span>Open Roadmap</span>
+                    <span>Open In Portal</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             ))}
@@ -1605,9 +1608,11 @@ function CoursesTab({
 // ─── ROADMAP TAB ─────────────────────────────────
 function RoadmapTab({
   purchasedRoadmapSlugs,
+  onSelectRoadmap,
   onRequestBuyRoadmap,
 }: {
   purchasedRoadmapSlugs: string[];
+  onSelectRoadmap: (r: RoadmapItem) => void;
   onRequestBuyRoadmap: (r: RoadmapItem) => void;
 }) {
   return (
@@ -1680,13 +1685,13 @@ function RoadmapTab({
                       All 6 Phases Unlocked
                     </span>
                   </div>
-                  <Link
-                    href={`/roadmap/${r.slug}`}
+                  <button
+                    onClick={() => onSelectRoadmap(r)}
                     className="px-5 py-2.5 rounded-xl border-2 border-black bg-yellow-300 hover:bg-yellow-400 text-black text-xs font-black transition-colors shadow-brutal-xs flex items-center gap-1"
                   >
                     <span>Open Roadmap</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 pt-2 border-t-2 border-neutral-100">
@@ -1697,13 +1702,13 @@ function RoadmapTab({
                     <Zap className="w-3.5 h-3.5 fill-black" />
                     <span>Unlock Full Roadmap · {r.price}</span>
                   </button>
-                  <Link
-                    href={`/roadmap/${r.slug}`}
+                  <button
+                    onClick={() => onSelectRoadmap(r)}
                     className="px-3.5 py-2.5 rounded-xl border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-black shadow-brutal-xs"
-                    title="Preview Roadmap"
+                    title="View In Portal"
                   >
                     Preview
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>
@@ -2235,6 +2240,7 @@ function SettingsTab() {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedRoadmap, setSelectedRoadmap] = useState<RoadmapItem | null>(null);
 
   // User purchased content state
   const [purchasedCourseSlugs, setPurchasedCourseSlugs] = useState<string[]>([]);
@@ -2420,6 +2426,10 @@ export default function DashboardPage() {
               purchasedRoadmapSlugs={purchasedRoadmapSlugs}
               onSelectTab={handleSelectTab}
               onSelectCourse={(course) => setSelectedCourse(course)}
+              onSelectRoadmap={(roadmap) => {
+                setSelectedRoadmap(roadmap);
+                setActiveTab("roadmap");
+              }}
               onRequestBuyCourse={handleOpenBuyCourseModal}
               onRequestBuyRoadmap={handleOpenBuyRoadmapModal}
             />
@@ -2434,10 +2444,20 @@ export default function DashboardPage() {
             />
           )}
           {activeTab === "roadmap" && (
-            <RoadmapTab
-              purchasedRoadmapSlugs={purchasedRoadmapSlugs}
-              onRequestBuyRoadmap={handleOpenBuyRoadmapModal}
-            />
+            selectedRoadmap ? (
+              <DashboardRoadmapViewer
+                roadmap={selectedRoadmap}
+                isPurchased={purchasedRoadmapSlugs.includes(selectedRoadmap.slug)}
+                onBack={() => setSelectedRoadmap(null)}
+                onRequestBuy={() => handleOpenBuyRoadmapModal(selectedRoadmap)}
+              />
+            ) : (
+              <RoadmapTab
+                purchasedRoadmapSlugs={purchasedRoadmapSlugs}
+                onSelectRoadmap={(roadmap) => setSelectedRoadmap(roadmap)}
+                onRequestBuyRoadmap={handleOpenBuyRoadmapModal}
+              />
+            )
           )}
           {activeTab === "community" && <CommunityTab />}
           {activeTab === "settings" && <SettingsTab />}
